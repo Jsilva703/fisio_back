@@ -1,7 +1,9 @@
 require 'bundler/setup'
 Bundler.require
 
-# Configuração de Segurança (CORS)
+# TEM DE ESTAR COMENTADO PARA ESSE TESTE
+# Mongoid.load!(File.join(File.dirname(__FILE__), 'config', 'mongoid.yml'))
+
 use Rack::Cors do
   allow do
     origins '*'
@@ -9,12 +11,11 @@ use Rack::Cors do
   end
 end
 
-# --- A CORREÇÃO ESTÁ AQUI ---
-# Primeiro definimos a rota
+# Define a rota
 get '/' do
   content_type :json
-  { status: 'API DJM Online 🚀', versao: '1.0.0' }.to_json
+  { status: 'API DJM Online na Vercel 🚀', env: 'Production' }.to_json
 end
 
-# Depois mandamos rodar a aplicação (sem o bloco do...end)
+# Roda a app
 run Sinatra::Application
