@@ -1,5 +1,12 @@
-require 'bundler/setup'
-Bundler.require(:default)
+begin
+  require 'bundler/setup'
+  Bundler.require(:default)
+rescue LoadError => e
+  puts "Warning: #{e.message}"
+  # Fallback - carrega as gems sem Bundler
+  require 'sinatra'
+  require 'rack/cors'
+end
 
 class App < Sinatra::Base
   set :show_exceptions, false
