@@ -1,7 +1,58 @@
 require 'bundler/setup'
 Bundler.require
-require_relative '../app/controllers/health_controller'
-require_relative '../app/controllers/test_controller'
+
+# Health Controller
+class HealthController
+  def self.check
+    {
+      status: 'OK',
+      message: 'API DJM está funcionando perfeitamente!',
+      timestamp: Time.now.iso8601,
+      environment: ENV['RACK_ENV'] || 'production'
+    }
+  end
+
+  def self.info
+    {
+      name: 'API DJM',
+      version: '1.0.0',
+      description: 'API para gerenciamento de fisioterapia',
+      uptime: 'Sistema em operação',
+      created_at: '2025-11-25'
+    }
+  end
+end
+
+# Test Controller
+class TestController
+  def self.welcome
+    {
+      status: 'success',
+      message: 'Bem-vindo à API DJM!',
+      data: {
+        welcome_text: 'Esta é uma API de teste para fisioterapia',
+        endpoints: [
+          { method: 'GET', path: '/', description: 'Raiz da API' },
+          { method: 'GET', path: '/health', description: 'Status de saúde da API' },
+          { method: 'GET', path: '/api/info', description: 'Informações da API' },
+          { method: 'GET', path: '/api/test', description: 'Rota de teste' }
+        ]
+      }
+    }
+  end
+
+  def self.test_message
+    {
+      status: 'success',
+      message: 'Teste de rota funcionando!',
+      data: {
+        timestamp: Time.now.iso8601,
+        random_number: rand(1..100),
+        test_array: ['item1', 'item2', 'item3']
+      }
+    }
+  end
+end
 
 use Rack::Cors do
   allow do
