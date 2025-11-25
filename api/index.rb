@@ -1,7 +1,10 @@
 require 'bundler/setup'
-Bundler.require
+Bundler.require(:default)
 
 class App < Sinatra::Base
+  set :show_exceptions, false
+  set :dump_errors, false
+
   # Rota raiz
   get '/' do
     content_type :json
