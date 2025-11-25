@@ -2,20 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "config.ru",
-      "use": "@vercel/ruby",
-      "config": {
-        "runtime": "ruby3.2.x"
-      }
+      "src": "api/index.rb",
+      "use": "@vercel/ruby"
     }
   ],
-  "env": {
-    "BUNDLE_PATH": ".bundle"
-  },
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/config.ru"
+      "dest": "/api/index.rb"
     }
   ]
 }
