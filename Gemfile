@@ -7,6 +7,8 @@ gem 'puma', '~> 6.0'
 gem 'rack-cors'
 gem 'json'
 gem 'mongoid', '~> 9.0'
+gem 'rackup'
+gem 'dotenv'
 
 group :development do
   gem 'rerun'

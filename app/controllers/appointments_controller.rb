@@ -9,41 +9,34 @@ class AppointmentsController < Sinatra::Base
 
   # --- CRIAR AGENDAMENTO ---
   post '/' do
-    # Ler corretamente o corpo da requisição
     begin
-      request.body.rewind
-      body = request.body.read
+      params_data = env['parsed_json'] || {}
       
-      if body.empty?
+      if params_data.empty?
         status 400
-        return { error: "Corpo da requisição vazio" }.to_json
+        return { error: "Dados inválidos ou vazio" }.to_json
       end
-      
-      request_payload = JSON.parse(body)
-    rescue JSON::ParserError => e
-      status 400
-      return { error: "JSON inválido", detalhes: e.message }.to_json
-    end
 
-    appointment = Appointment.new(
-      patient_name:     request_payload['patient_name'],
-      patient_phone:    request_payload['patient_phone'],
-      type:             request_payload['type'] || 'clinic',
-      address:          request_payload['address'],
-      appointment_date: request_payload['appointment_date'],
-      price:            request_payload['price']
-    )
+      appointment = Appointment.new(
+        patient_name:     params_data['patient_name'],
+        patient_phone:    params_data['patient_phone'],
+        type:             params_data['type'] || 'clinic',
+        address:          params_data['address'],
+        appointment_date: Time.parse(params_data['appointment_date'].to_s),
+        price:            params_data['price'].to_f
+      )
 
-    if appointment.save
-      status 201
-      return { status: 'success', agendamento: appointment }.to_json
-    else
-      status 422
-      return { error: "Erro ao salvar", detalhes: appointment.errors.to_h }.to_json
+      if appointment.save
+        status 201
+        return { status: 'success', agendamento: appointment }.to_json
+      else
+        status 422
+        return { error: "Erro ao salvar", detalhes: appointment.errors.messages }.to_json
+      end
+    rescue => e
+      status 500
+      return { error: "Erro interno", mensagem: e.message, erro: e.class.to_s }.to_json
     end
-  rescue => e
-    status 500
-    return { error: "Erro interno", mensagem: e.message }.to_json
   end
 
   # --- LISTAR AGENDAMENTOS ---
@@ -74,12 +67,10 @@ class AppointmentsController < Sinatra::Base
   # --- ATUALIZAR AGENDAMENTO ---
   patch '/:id' do
     begin
-      request.body.rewind
-      body = request.body.read
-      request_payload = JSON.parse(body) unless body.empty?
+      params_data = env['parsed_json'] || {}
       
       appointment = Appointment.find(params[:id])
-      appointment.update(request_payload) if request_payload
+      appointment.update(params_data) if !params_data.empty?
       
       { status: 'success', agendamento: appointment }.to_json
     rescue Mongoid::Errors::DocumentNotFound

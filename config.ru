@@ -1,77 +1,74 @@
 # encoding: UTF-8
 require 'bundler/setup'
+
+# Carregar variáveis de ambiente do .env ANTES de Bundler.require
+require 'dotenv'
+Dotenv.load
+
 Bundler.require
 
-class APIApp < Sinatra::Base
-  configure do
-    disable :protection
-    set :bind, '0.0.0.0'
-    set :port, ENV['PORT'] || 3000
+# 1. Carregar Configuração do Banco
+Mongoid.load!(File.join(File.dirname(__FILE__), 'config', 'mongoid.yml'))
+
+# 2. Middleware para parsear JSON
+class JsonParserMiddleware
+  def initialize(app)
+    @app = app
   end
 
-  use Rack::Cors do
-    allow do
-      origins '*'
-      resource '*', headers: :any, methods: [:get, :post, :put, :patch, :delete, :options]
+  def call(env)
+    if env['CONTENT_TYPE']&.include?('application/json')
+      begin
+        body = env['rack.input'].read
+        env['rack.input'] = StringIO.new(body)
+        env['parsed_json'] = body.empty? ? {} : JSON.parse(body)
+      rescue => e
+        env['parsed_json'] = {}
+      end
+    else
+      env['parsed_json'] = {}
     end
-  end
-
-  get '/' do
-    content_type :json
-    {
-      status: 'success',
-      message: 'Bem-vindo à API DJM!',
-      environment: ENV['RACK_ENV'] || 'development',
-      timestamp: Time.now.iso8601
-    }.to_json
-  end
-
-  get '/health' do
-    content_type :json
-    {
-      status: 'healthy',
-      message: 'API está funcionando!',
-      timestamp: Time.now.iso8601,
-      uptime: 'online'
-    }.to_json
-  end
-
-  get '/api/info' do
-    content_type :json
-    {
-      name: 'API DJM',
-      version: '1.0.0',
-      description: 'API para gerenciamento de fisioterapia',
-      author: 'DJM Team',
-      environment: ENV['RACK_ENV'] || 'development'
-    }.to_json
-  end
-
-  get '/api/test' do
-    content_type :json
-    {
-      status: 'success',
-      message: 'Teste de rota funcionando!',
-      timestamp: Time.now.iso8601,
-      random_number: rand(1..100),
-      endpoints: [
-        { method: 'GET', path: '/', description: 'Raiz da API' },
-        { method: 'GET', path: '/health', description: 'Status de saúde' },
-        { method: 'GET', path: '/api/info', description: 'Informações' },
-        { method: 'GET', path: '/api/test', description: 'Teste' }
-      ]
-    }.to_json
-  end
-
-  not_found do
-    content_type :json
-    { status: 'error', message: 'Rota não encontrada', path: request.path }.to_json
-  end
-
-  error do
-    content_type :json
-    { status: 'error', message: 'Erro interno do servidor' }.to_json
+    @app.call(env)
   end
 end
 
-run APIApp
+# 3. Carregar ficheiros
+require_relative './app/models/appointment'
+require_relative './app/controllers/appointments_controller'
+# require_relative './app/controllers/health_controller'
+
+class App < Sinatra::Base
+  configure do
+    enable :logging
+    set :show_exceptions, false
+    
+    # --- CORREÇÃO DO ERRO ---
+    # Define o fuso horário padrão para evitar o erro 'nil.parse' no Mongoid
+    Time.zone = 'America/Sao_Paulo'    # ------------------------
+  end
+
+  before do
+    content_type :json
+  end
+  
+  # ... resto das rotas ...
+  get '/' do
+    { status: 'API DJM Online', plataforma: 'Render 🚀' }.to_json
+  end
+  
+  get '/health' do
+    { status: 'OK', db: 'Connected' }.to_json
+  end
+end
+
+use Rack::Cors do
+  allow do
+    origins '*' 
+    resource '*', headers: :any, methods: [:get, :post, :put, :patch, :delete, :options]
+  end
+end
+
+use JsonParserMiddleware
+
+map('/api/appointments') { run AppointmentsController }
+map('/') { run App }
