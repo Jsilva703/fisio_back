@@ -1,0 +1,13 @@
+.git
+.gitignore
+.env
+.env.local
+node_modules
+.bundle
+vendor/bundle
+spec
+test
+.ruby-version
+Procfile
+config.ru
+app
