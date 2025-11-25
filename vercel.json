@@ -2,14 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/handler.rb",
+      "src": "config.ru",
       "use": "@vercel/ruby"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/api/handler.rb"
+      "dest": "/config.ru"
     }
   ]
 }

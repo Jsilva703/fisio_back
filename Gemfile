@@ -1,5 +1,8 @@
 source 'https://rubygems.org'
 
-gem 'rack'
+gem 'sinatra'
+gem 'puma'
+gem 'rackup'
 gem 'rack-cors'
 gem 'json'
+gem 'mongoid' # Importante para quando formos ligar o banco
