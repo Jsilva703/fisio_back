@@ -3,9 +3,15 @@
   "builds": [
     {
       "src": "config.ru",
-      "use": "@vercel/ruby"
+      "use": "@vercel/ruby",
+      "config": {
+        "runtime": "ruby3.2.x"
+      }
     }
   ],
+  "env": {
+    "BUNDLE_PATH": ".bundle"
+  },
   "routes": [
     {
       "src": "/(.*)",
