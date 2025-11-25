@@ -93,7 +93,6 @@ class CorsMiddleware
   end
 end
 
+# Return the app without using 'run'
 app = APIApp.new
-app = CorsMiddleware.new(app)
-
-run app
+CorsMiddleware.new(app)
