@@ -14,8 +14,6 @@ end
 
 get '/' do
   content_type :json
-  # Se quiseres ser extra seguro, remove o emoji 🚀 por agora, 
-  # mas com o comentário encoding: UTF-8 ele deve funcionar.
   { status: 'API DJM Online na Vercel', env: 'Production' }.to_json
 end
 
