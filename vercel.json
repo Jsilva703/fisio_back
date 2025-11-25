@@ -2,19 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/index.rb",
+      "src": "api/handler.rb",
       "use": "@vercel/ruby"
     }
   ],
-  "functions": {
-    "api/index.rb": {
-      "handler": "api/handler.handler"
-    }
-  },
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/api/index.rb"
+      "dest": "/api/handler.rb"
     }
   ]
 }
