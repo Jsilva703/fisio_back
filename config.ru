@@ -2,8 +2,12 @@
 require 'bundler/setup'
 Bundler.require
 
-# TEM DE ESTAR COMENTADO PARA ESTE TESTE
-# Mongoid.load!(File.join(File.dirname(__FILE__), 'config', 'mongoid.yml'))
+# --- ADICIONA ESTE BLOCO ---
+configure do
+  # Desativa o bloqueio de Host da Vercel
+  set :protection, :except => [:host_authorization]
+end
+# ---------------------------
 
 use Rack::Cors do
   allow do
@@ -15,6 +19,12 @@ end
 get '/' do
   content_type :json
   { status: 'API DJM Online na Vercel', env: 'Production' }.to_json
+end
+
+# Adiciona esta rota para o teu teste funcionar
+get '/health' do
+  content_type :json
+  { status: 'Saudavel', timestamp: Time.now.to_s }.to_json
 end
 
 run Sinatra::Application
