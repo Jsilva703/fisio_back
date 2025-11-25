@@ -89,9 +89,11 @@ class CorsMiddleware
   end
 end
 
-# Create and return the app
-$app = APIApp.new
-$app = CorsMiddleware.new($app)
+# Create the app
+app = APIApp.new
+app = CorsMiddleware.new(app)
 
-# This will be called by Vercel's @vercel/ruby runtime
-$app
+# Return as lambda for Vercel
+lambda do |env|
+  app.call(env)
+end
