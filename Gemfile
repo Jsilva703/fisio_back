@@ -1,8 +1,13 @@
 source 'https://rubygems.org'
 
-gem 'sinatra'
-gem 'puma'
-gem 'rackup'
+ruby '3.2.3'
+
+gem 'sinatra', '~> 4.0'
+gem 'puma', '~> 6.0'
 gem 'rack-cors'
 gem 'json'
-gem 'mongoid' # Importante para quando formos ligar o banco
+gem 'mongoid', '~> 9.0'
+
+group :development do
+  gem 'rerun'
+end
