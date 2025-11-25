@@ -1,25 +1,20 @@
 {
   "version": 2,
-  "buildCommand": "bundle install",
-  "outputDirectory": ".",
   "builds": [
     {
       "src": "api/index.rb",
-      "use": "@vercel/ruby",
-      "config": {
-        "maxLambdaSize": "250mb",
-        "runtime": "ruby3.2.x"
-      }
+      "use": "@vercel/ruby"
     }
   ],
+  "functions": {
+    "api/index.rb": {
+      "handler": "api/handler.handler"
+    }
+  },
   "routes": [
     {
       "src": "/(.*)",
       "dest": "/api/index.rb"
     }
-  ],
-  "env": {
-    "BUNDLE_PATH": ".bundle",
-    "RACK_ENV": "production"
-  }
+  ]
 }

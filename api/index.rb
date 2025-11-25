@@ -89,42 +89,6 @@ class CorsMiddleware
   end
 end
 
-# Create the lambda handler
+# Return the app for rackup
 app = APIApp.new
-app = CorsMiddleware.new(app)
-
-# Export as handler for AWS Lambda
-if defined?(Proc) && respond_to?(:lambda)
-  # This is the handler for Vercel's Lambda
-  Proc.new do |event, context|
-    # Convert Lambda event to Rack env
-    method = event['httpMethod'] || 'GET'
-    path = event['path'] || '/'
-    
-    env = {
-      'REQUEST_METHOD' => method,
-      'PATH_INFO' => path,
-      'SCRIPT_NAME' => '',
-      'SERVER_NAME' => event['headers']&.[]('host') || 'localhost',
-      'SERVER_PORT' => '443',
-      'SERVER_PROTOCOL' => 'HTTP/1.1',
-      'rack.version' => [1, 3],
-      'rack.input' => StringIO.new(event['body'] || ''),
-      'rack.errors' => $stderr,
-      'rack.multithread' => false,
-      'rack.multiprocess' => false,
-      'rack.run_once' => true
-    }
-    
-    status, headers, body = app.call(env)
-    
-    {
-      statusCode: status,
-      headers: headers,
-      body: body.join
-    }
-  end
-else
-  # Fallback for local testing with rackup
-  app
-end
+CorsMiddleware.new(app)
