@@ -4,8 +4,7 @@ Bundler.require
 
 # --- ADICIONA ESTE BLOCO ---
 configure do
-  # Desativa o bloqueio de Host da Vercel
-  set :protection, :except => [:host_authorization]
+  disable :protection
 end
 # ---------------------------
 
