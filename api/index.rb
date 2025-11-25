@@ -1,76 +1,101 @@
-begin
-  require 'bundler/setup'
-  Bundler.require(:default)
-rescue LoadError => e
-  puts "Warning: #{e.message}"
-  # Fallback - carrega as gems sem Bundler
-  require 'sinatra'
-  require 'rack/cors'
-end
+require 'bundler/setup'
+Bundler.require
+require 'json'
 
-class App < Sinatra::Base
-  set :show_exceptions, false
-  set :dump_errors, false
+class APIApp
+  RESPONSE_HEADERS = { 'Content-Type' => 'application/json' }.freeze
 
-  # Rota raiz
-  get '/' do
-    content_type :json
-    {
-      status: 'success',
-      message: 'Bem-vindo à API DJM!',
-      endpoints: [
-        { method: 'GET', path: '/', description: 'Raiz da API' },
-        { method: 'GET', path: '/health', description: 'Status de saúde' },
-        { method: 'GET', path: '/api/info', description: 'Informações da API' },
-        { method: 'GET', path: '/api/test', description: 'Teste' }
-      ]
-    }.to_json
+  def call(env)
+    path = env['PATH_INFO']
+    method = env['REQUEST_METHOD']
+
+    case [method, path]
+    when ['GET', '/']
+      response_json(200, {
+        status: 'success',
+        message: 'Bem-vindo à API DJM!',
+        endpoints: [
+          { method: 'GET', path: '/', description: 'Raiz da API' },
+          { method: 'GET', path: '/health', description: 'Status de saúde' },
+          { method: 'GET', path: '/api/info', description: 'Informações da API' },
+          { method: 'GET', path: '/api/test', description: 'Teste' }
+        ]
+      })
+    when ['GET', '/health']
+      response_json(200, {
+        status: 'OK',
+        message: 'API funcionando!',
+        timestamp: Time.now.iso8601
+      })
+    when ['GET', '/api/info']
+      response_json(200, {
+        name: 'API DJM',
+        version: '1.0.0',
+        description: 'API para fisioterapia',
+        environment: ENV['RACK_ENV'] || 'production'
+      })
+    when ['GET', '/api/test']
+      response_json(200, {
+        status: 'success',
+        message: 'Teste funcionando!',
+        timestamp: Time.now.iso8601,
+        random: rand(1..100)
+      })
+    else
+      response_json(404, {
+        status: 'error',
+        message: 'Rota não encontrada',
+        path: path
+      })
+    end
   end
 
-  # Rota de saúde
-  get '/health' do
-    content_type :json
-    {
-      status: 'OK',
-      message: 'API funcionando!',
-      timestamp: Time.now.iso8601
-    }.to_json
-  end
+  private
 
-  # Informações da API
-  get '/api/info' do
-    content_type :json
-    {
-      name: 'API DJM',
-      version: '1.0.0',
-      description: 'API para fisioterapia',
-      environment: ENV['RACK_ENV'] || 'production'
-    }.to_json
-  end
-
-  # Rota de teste
-  get '/api/test' do
-    content_type :json
-    {
-      status: 'success',
-      message: 'Teste funcionando!',
-      timestamp: Time.now.iso8601,
-      random: rand(1..100)
-    }.to_json
-  end
-
-  # 404
-  not_found do
-    content_type :json
-    { status: 'error', message: 'Rota não encontrada' }.to_json
+  def response_json(status, data)
+    body = JSON.generate(data)
+    [status, RESPONSE_HEADERS, [body]]
   end
 end
 
-use Rack::Cors do
-  allow do
-    origins '*'
-    resource '*', headers: :any, methods: [:get, :post, :put, :patch, :delete, :options]
+class CorsMiddleware
+  def initialize(app)
+    @app = app
+  end
+
+  def call(env)
+    if env['REQUEST_METHOD'] == 'OPTIONS'
+      return cors_response
+    end
+    
+    status, headers, body = @app.call(env)
+    
+    headers.merge!(
+      'Access-Control-Allow-Origin' => '*',
+      'Access-Control-Allow-Methods' => 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers' => '*'
+    )
+    
+    [status, headers, body]
+  end
+
+  private
+
+  def cors_response
+    [200, cors_headers, ['OK']]
+  end
+
+  def cors_headers
+    {
+      'Access-Control-Allow-Origin' => '*',
+      'Access-Control-Allow-Methods' => 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers' => '*',
+      'Content-Type' => 'text/plain'
+    }
   end
 end
 
-run App
+app = APIApp.new
+app = CorsMiddleware.new(app)
+
+run app
