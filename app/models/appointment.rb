@@ -14,8 +14,8 @@ class Appointment
     field :duration, type: Integer, default: 60
 
     field :price, type: BigDecimal
-    field :payment_status, type: Symbol, default: :pending 
-    field :status, type: String, default: :scheduled
+    field :payment_status, type: String, default: 'pending' 
+    field :status, type: String, default: 'scheduled'
 
     validates :patient_name, presence: true
     validates :appointment_date, presence: true

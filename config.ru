@@ -7,6 +7,8 @@ Dotenv.load
 
 Bundler.require
 
+Time.zone = 'America/Sao_Paulo'
+
 # 1. Carregar Configuração do Banco
 Mongoid.load!(File.join(File.dirname(__FILE__), 'config', 'mongoid.yml'))
 
@@ -35,6 +37,8 @@ end
 # 3. Carregar ficheiros
 require_relative './app/models/appointment'
 require_relative './app/controllers/appointments_controller'
+require_relative './app/models/scheduling'
+require_relative './app/controllers/schedulings_controller'
 # require_relative './app/controllers/health_controller'
 
 class App < Sinatra::Base
@@ -71,4 +75,5 @@ end
 use JsonParserMiddleware
 
 map('/api/appointments') { run AppointmentsController }
+map('/api/schedulings') { run SchedulingsController}
 map('/') { run App }
