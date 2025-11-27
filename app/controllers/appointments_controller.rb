@@ -40,6 +40,7 @@ class AppointmentsController < Sinatra::Base
       appointment = Appointment.new(
         patient_name:     params_data['patient_name'],
         patient_phone:    params_data['patient_phone'],
+        patiente_document: params_data['patiente_document'],
         type:             params_data['type'] || 'clinic',
         address:          params_data['address'],
         appointment_date: data_hora,

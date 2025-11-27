@@ -5,6 +5,7 @@ class Appointment
 
     field :patient_name, type: String
     field :patient_phone, type: String
+    field :patiente_document, type: String
 
 
     field :type, type: String, default: :clinic
@@ -21,6 +22,7 @@ class Appointment
     validates :appointment_date, presence: true
     validates :price, presence: true
     validates :patient_phone, presence: true
+    validates :patiente_document, presence: true
 
     validates :address, presence: true, if: -> { type == :home}
 end    
