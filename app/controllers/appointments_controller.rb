@@ -90,22 +90,26 @@ class AppointmentsController < Sinatra::Base
   end
 
   # --- ATUALIZAR AGENDAMENTO ---
-  patch '/:patient_name' do
+    patch '/:id' do
     begin
       params_data = env['parsed_json'] || {}
       
-      appointment = Appointment.find(params[:patient_name])
-      appointment.update(params_data) if !params_data.empty?
+      # Busca pelo ID único (seguro)
+      appointment = Appointment.find(params[:id])
+      
+      # Atualiza só o que veio (status, pagamento, etc.)
+      appointment.update(params_data) unless params_data.empty?
       
       { status: 'success', agendamento: appointment }.to_json
-    rescue Mongoid::Errors::DocumentNotFound
-      status 404
-      { error: "Agendamento não encontrado" }.to_json
-    rescue => e
+      
+      rescue Mongoid::Errors::DocumentNotFound
+          status 404
+        { error: "Agendamento não encontrado" }.to_json
+      rescue => e
       status 500
-      { error: "Erro ao atualizar", mensagem: e.message }.to_json
+        { error: "Erro interno", mensagem: e.message }.to_json
+      end
     end
-  end
 
   # --- DELETAR AGENDAMENTO ---
   delete '/:id' do
