@@ -26,9 +26,12 @@ class AppointmentsController < Sinatra::Base
       data_agenda = data_hora.in_time_zone.to_date 
       hora_slot   = data_hora.in_time_zone.strftime("%H:%M")
 
+      # Pegar company_id do token
+      company_id = env['current_company_id']
+      
       # 2. VERIFICAÇÃO DE DISPONIBILIDADE (Regra de Ouro) 🛡️
-      # Busca a configuração daquele dia
-      agenda = Scheduling.where(date: data_agenda).first
+      # Busca a configuração daquele dia DA EMPRESA
+      agenda = Scheduling.where(date: data_agenda, company_id: company_id).first
 
       # Se não tem agenda, ou o horário não está na lista 'slots'
       if agenda.nil? || !agenda.slots.include?(hora_slot)
@@ -44,7 +47,8 @@ class AppointmentsController < Sinatra::Base
         type:             params_data['type'] || 'clinic',
         address:          params_data['address'],
         appointment_date: data_hora,
-        price:            params_data['price'].to_f
+        price:            params_data['price'].to_f,
+        company_id:       company_id
       )
 
       if appointment.save
@@ -68,7 +72,9 @@ class AppointmentsController < Sinatra::Base
   # --- LISTAR AGENDAMENTOS ---
   get '/' do
     begin
-      agendamentos = Appointment.all.desc(:appointment_date)
+      # Filtrar apenas agendamentos DA EMPRESA do usuário
+      company_id = env['current_company_id']
+      agendamentos = Appointment.where(company_id: company_id).desc(:appointment_date)
       { status: 'success', agendamentos: agendamentos }.to_json
     rescue => e
       status 500
@@ -79,11 +85,15 @@ class AppointmentsController < Sinatra::Base
   # --- BUSCAR AGENDAMENTO POR ID ---
   get '/:id' do
     begin
-      appointment = Appointment.find(params[:id])
+      company_id = env['current_company_id']
+      appointment = Appointment.where(id: params[:id], company_id: company_id).first
+      
+      if appointment.nil?
+        status 404
+        return { error: "Agendamento não encontrado" }.to_json
+      end
+      
       { status: 'success', agendamento: appointment }.to_json
-    rescue Mongoid::Errors::DocumentNotFound
-      status 404
-      { error: "Agendamento não encontrado" }.to_json
     rescue => e
       status 500
       { error: "Erro ao buscar agendamento", mensagem: e.message }.to_json
@@ -94,18 +104,21 @@ class AppointmentsController < Sinatra::Base
     patch '/:id' do
     begin
       params_data = env['parsed_json'] || {}
+      company_id = env['current_company_id']
       
-      # Busca pelo ID único (seguro)
-      appointment = Appointment.find(params[:id])
+      # Busca pelo ID E company_id (segurança)
+      appointment = Appointment.where(id: params[:id], company_id: company_id).first
+      
+      if appointment.nil?
+        status 404
+        return { error: "Agendamento não encontrado" }.to_json
+      end
       
       # Atualiza só o que veio (status, pagamento, etc.)
       appointment.update(params_data) unless params_data.empty?
       
       { status: 'success', agendamento: appointment }.to_json
       
-      rescue Mongoid::Errors::DocumentNotFound
-          status 404
-        { error: "Agendamento não encontrado" }.to_json
       rescue => e
       status 500
         { error: "Erro interno", mensagem: e.message }.to_json
@@ -115,13 +128,17 @@ class AppointmentsController < Sinatra::Base
   # --- DELETAR AGENDAMENTO ---
   delete '/:id' do
     begin
-      appointment = Appointment.find(params[:id])
+      company_id = env['current_company_id']
+      appointment = Appointment.where(id: params[:id], company_id: company_id).first
+      
+      if appointment.nil?
+        status 404
+        return { error: "Agendamento não encontrado" }.to_json
+      end
+      
       appointment.delete
       
       { status: 'success', mensagem: "Agendamento deletado" }.to_json
-    rescue Mongoid::Errors::DocumentNotFound
-      status 404
-      { error: "Agendamento não encontrado" }.to_json
     rescue => e
       status 500
       { error: "Erro ao deletar", mensagem: e.message }.to_json

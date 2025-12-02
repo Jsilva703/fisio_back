@@ -28,11 +28,34 @@ class AuthController < Sinatra::Base
         return { error: "Email já cadastrado" }.to_json
       end
 
+      # Verificar company_id (obrigatório para users/admins, opcional para machine)
+      role = params_data['role'] || 'user'
+      if role != 'machine' && !params_data['company_id']
+        status 400
+        return { error: "company_id é obrigatório para usuários que não são machine" }.to_json
+      end
+
+      # Verificar se a empresa existe e está ativa
+      if role != 'machine'
+        company = Company.find(params_data['company_id'])
+        
+        unless company.active?
+          status 403
+          return { error: "Empresa inativa ou suspensa" }.to_json
+        end
+        
+        unless company.can_add_user?
+          status 403
+          return { error: "Limite de usuários atingido para esta empresa" }.to_json
+        end
+      end
+
       # Cria o usuário
       user = User.new(
         name: params_data['name'],
         email: params_data['email'],
-        role: params_data['role'] || 'user'
+        role: role,
+        company_id: role == 'machine' ? nil : params_data['company_id']
       )
       user.password = params_data['password']
 
@@ -74,6 +97,14 @@ class AuthController < Sinatra::Base
       if user.nil?
         status 401
         return { error: "Email ou senha inválidos" }.to_json
+      end
+
+      # Verificar se a empresa está ativa (exceto para machine)
+      if user.role != 'machine' && user.company
+        unless user.company.active?
+          status 403
+          return { error: "Empresa inativa ou suspensa" }.to_json
+        end
       end
 
       # Verifica a senha
@@ -142,6 +173,7 @@ class AuthController < Sinatra::Base
       user_id: user.id.to_s,
       email: user.email,
       role: user.role,
+      company_id: user.company_id&.to_s,
       exp: Time.now.to_i + (24 * 3600) # Expira em 24 horas
     }
     JWT.encode(payload, JWT_SECRET, 'HS256')

@@ -35,12 +35,17 @@ class JsonParserMiddleware
 end
 
 # 3. Carregar ficheiros
+require_relative './app/models/company'
 require_relative './app/models/appointment'
 require_relative './app/controllers/appointments_controller'
 require_relative './app/models/scheduling'
 require_relative './app/controllers/schedulings_controller'
 require_relative './app/models/user'
 require_relative './app/controllers/auth_controller'
+require_relative './app/controllers/machine_controller'
+require_relative './app/controllers/companies_controller'
+require_relative './app/controllers/billing_controller'
+require_relative './app/controllers/public_booking_controller'
 require_relative './app/middleware/auth_middleware'
 # require_relative './app/controllers/health_controller'
 
@@ -79,6 +84,10 @@ use JsonParserMiddleware
 use AuthMiddleware
 
 map('/api/auth') { run AuthController }
+map('/api/machine') { run MachineController }
+map('/api/companies') { run CompaniesController }
+map('/api/billing') { run BillingController }
+map('/api/public/booking') { run PublicBookingController }
 map('/api/appointments') { run AppointmentsController }
 map('/api/schedulings') { run SchedulingsController}
 map('/') { run App }

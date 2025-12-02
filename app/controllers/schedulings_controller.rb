@@ -21,10 +21,11 @@ class SchedulingsController < Sinatra::Base
       end
 
       data = Date.parse(params_data['date'].to_s)
+      company_id = env['current_company_id']
 
-      # Tenta encontrar para não criar duplicado (o Mongoid bloquearia com erro)
+      # Tenta encontrar para não criar duplicado DA EMPRESA
       # Se não achar, cria um NOVO do zero (.new)
-      agenda = Scheduling.where(date: data).first || Scheduling.new(date: data)
+      agenda = Scheduling.where(date: data, company_id: company_id).first || Scheduling.new(date: data, company_id: company_id)
 
       # Define os valores
       agenda.slots = params_data['slots'] || []
@@ -46,15 +47,17 @@ class SchedulingsController < Sinatra::Base
     end
   end
 
-  # ... (Mantém os GET e DELETE iguais) ...
+  # --- LISTAR AGENDAS ---
   get '/' do
-    schedulings = Scheduling.where(:date.gte => Date.today).asc(:date)
+    company_id = env['current_company_id']
+    schedulings = Scheduling.where(company_id: company_id, :date.gte => Date.today).asc(:date)
     { status: 'success', data: schedulings }.to_json
   end
 
   get '/:date' do
     data = Date.parse(params[:date])
-    agenda = Scheduling.where(date: data).first
+    company_id = env['current_company_id']
+    agenda = Scheduling.where(date: data, company_id: company_id).first
     if agenda
       { status: 'success', data: agenda }.to_json
     else
@@ -64,7 +67,8 @@ class SchedulingsController < Sinatra::Base
 
   delete '/:date' do
     data = Date.parse(params[:date])
-    agenda = Scheduling.where(date: data).first
+    company_id = env['current_company_id']
+    agenda = Scheduling.where(date: data, company_id: company_id).first
     if agenda
       agenda.destroy
       { status: 'success', message: 'Dia limpo' }.to_json

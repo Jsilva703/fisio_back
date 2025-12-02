@@ -8,16 +8,23 @@ class User
   field :name, type: String
   field :email, type: String
   field :password_digest, type: String
-  field :role, type: String, default: 'user' # user, admin
+  field :role, type: String, default: 'user' # user, admin, machine
+  field :company_id, type: BSON::ObjectId
+
+  # Relacionamentos
+  belongs_to :company, optional: true
 
   # Índices
   index({ email: 1 }, { unique: true })
+  index({ company_id: 1 })
 
   # Validações
   validates :name, presence: true
   validates :email, presence: true, uniqueness: true
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }
   validates :password_digest, presence: true
+  validates :role, inclusion: { in: ['user', 'admin', 'machine'], message: "%{value} não é um role válido" }
+  validates :company_id, presence: true, unless: -> { role == 'machine' }
 
   # Método para definir a senha (criptografa automaticamente)
   def password=(new_password)
