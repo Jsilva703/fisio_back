@@ -39,6 +39,9 @@ require_relative './app/models/appointment'
 require_relative './app/controllers/appointments_controller'
 require_relative './app/models/scheduling'
 require_relative './app/controllers/schedulings_controller'
+require_relative './app/models/user'
+require_relative './app/controllers/auth_controller'
+require_relative './app/middleware/auth_middleware'
 # require_relative './app/controllers/health_controller'
 
 class App < Sinatra::Base
@@ -73,7 +76,9 @@ use Rack::Cors do
 end
 
 use JsonParserMiddleware
+use AuthMiddleware
 
+map('/api/auth') { run AuthController }
 map('/api/appointments') { run AppointmentsController }
 map('/api/schedulings') { run SchedulingsController}
 map('/') { run App }

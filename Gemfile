@@ -9,6 +9,8 @@ gem 'json'
 gem 'mongoid', '~> 9.0'
 gem 'rackup'
 gem 'dotenv'
+gem 'bcrypt', '~> 3.1'
+gem 'jwt', '~> 2.7'
 
 group :development do
   gem 'rerun'
