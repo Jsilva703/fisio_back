@@ -17,11 +17,13 @@ class Appointment
     field :price, type: BigDecimal
     field :payment_status, type: String, default: 'pending' 
     field :status, type: String, default: 'scheduled'
+    field :procedure, type: String # Tipo de procedimento/consulta
     
     field :company_id, type: BSON::ObjectId
 
     # Relacionamentos
     belongs_to :company
+    belongs_to :patient, optional: true
 
     # Índices
     index({ company_id: 1 })
@@ -35,4 +37,17 @@ class Appointment
     validates :company_id, presence: true
 
     validates :address, presence: true, if: -> { type == :home}
+
+    # Métodos auxiliares
+    def date
+      appointment_date&.in_time_zone&.to_date&.to_s
+    end
+
+    def time
+      appointment_date&.in_time_zone&.strftime('%H:%M')
+    end
+
+    def formatted_date
+      appointment_date&.in_time_zone&.strftime('%d/%m/%Y às %H:%M')
+    end
 end    

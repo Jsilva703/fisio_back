@@ -1,6 +1,7 @@
 class CompaniesController < Sinatra::Base
   configure do
     enable :logging
+    set :method_override, true  # Permite PUT/DELETE via _method
   end
 
   before do
@@ -125,24 +126,80 @@ class CompaniesController < Sinatra::Base
     end
   end
 
-  # --- ATUALIZAR EMPRESA ---
-  patch '/:id' do
+  # --- ATUALIZAR EMPRESA (PUT completo) ---
+  put '/:id' do
     begin
       params_data = env['parsed_json'] || {}
+      
+      if params_data.empty?
+        status 400
+        return { error: "Nenhum dado enviado para atualização" }.to_json
+      end
+      
       company = Company.find(params[:id])
       
-      # Atualiza apenas os campos permitidos
-      allowed_fields = ['name', 'email', 'phone', 'cnpj', 'address', 'plan', 'status', 'max_users', 'settings']
+      # Campos que podem ser atualizados
+      allowed_fields = [
+        'name', 'email', 'phone', 'cnpj', 'address',  # Dados básicos
+        'plan', 'status', 'max_users',                 # Plano e limites
+        'settings'                                      # Configurações customizadas
+      ]
+      
+      # Filtra apenas campos permitidos
       update_data = params_data.select { |k, v| allowed_fields.include?(k) }
       
-      company.update(update_data) unless update_data.empty?
+      if update_data.empty?
+        status 400
+        return { 
+          error: "Nenhum campo válido para atualizar",
+          allowed_fields: allowed_fields
+        }.to_json
+      end
       
-      status 200
-      {
-        status: 'success',
-        message: 'Empresa atualizada com sucesso',
-        company: company
-      }.to_json
+      # Validações específicas
+      if update_data['plan'] && !['basic', 'professional', 'premium', 'enterprise'].include?(update_data['plan'])
+        status 400
+        return { error: "Plano inválido. Opções: basic, professional, premium, enterprise" }.to_json
+      end
+      
+      if update_data['status'] && !['active', 'inactive', 'suspended'].include?(update_data['status'])
+        status 400
+        return { error: "Status inválido. Opções: active, inactive, suspended" }.to_json
+      end
+      
+      if update_data['max_users'] && update_data['max_users'].to_i < 1
+        status 400
+        return { error: "max_users deve ser maior que 0" }.to_json
+      end
+      
+      # Atualiza a empresa
+      if company.update(update_data)
+        status 200
+        {
+          status: 'success',
+          message: 'Empresa atualizada com sucesso',
+          company: {
+            id: company.id.to_s,
+            name: company.name,
+            slug: company.slug,
+            email: company.email,
+            phone: company.phone,
+            cnpj: company.cnpj,
+            address: company.address,
+            plan: company.plan,
+            status: company.status,
+            max_users: company.max_users,
+            billing_day: company.billing_day,
+            billing_due_date: company.billing_due_date,
+            payment_status: company.payment_status,
+            settings: company.settings,
+            updated_at: company.updated_at
+          }
+        }.to_json
+      else
+        status 422
+        { error: "Erro ao atualizar empresa", detalhes: company.errors.messages }.to_json
+      end
       
     rescue Mongoid::Errors::DocumentNotFound
       status 404
@@ -151,6 +208,12 @@ class CompaniesController < Sinatra::Base
       status 500
       { error: "Erro ao atualizar empresa", mensagem: e.message }.to_json
     end
+  end
+  
+  # --- ATUALIZAR EMPRESA (PATCH parcial - mantido para compatibilidade) ---
+  patch '/:id' do
+    # Redireciona para PUT
+    call env.merge('REQUEST_METHOD' => 'PUT')
   end
 
   # --- DELETAR EMPRESA ---

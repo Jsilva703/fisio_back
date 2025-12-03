@@ -23,6 +23,8 @@ class Company
   has_many :users
   has_many :appointments
   has_many :schedulings
+  has_many :patients
+  has_many :medical_records
 
   # Índices
   index({ slug: 1 }, { unique: true })
@@ -33,7 +35,7 @@ class Company
   validates :name, presence: true
   validates :slug, presence: true, uniqueness: true
   validates :email, presence: true, format: { with: URI::MailTo::EMAIL_REGEXP }
-  validates :plan, inclusion: { in: ['basic', 'premium', 'enterprise'] }
+  validates :plan, inclusion: { in: ['basic', 'professional', 'premium', 'enterprise'] }
   validates :status, inclusion: { in: ['active', 'inactive', 'suspended'] }
   validates :billing_day, inclusion: { in: 1..31 }, allow_nil: true
   validates :payment_status, inclusion: { in: ['paid', 'pending', 'overdue'] }
