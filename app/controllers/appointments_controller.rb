@@ -5,6 +5,12 @@ class AppointmentsController < Sinatra::Base
 
   before do
     content_type :json
+    
+    # Parse JSON body
+    if request.content_type&.include?('application/json') && request.body.read.length > 0
+      request.body.rewind
+      env['parsed_json'] = JSON.parse(request.body.read)
+    end
   end
 
   # --- CRIAR AGENDAMENTO ---
@@ -126,6 +132,11 @@ class AppointmentsController < Sinatra::Base
       params_data = env['parsed_json'] || {}
       company_id = env['current_company_id']
       
+      if params_data.empty?
+        status 400
+        return { error: "Dados não fornecidos" }.to_json
+      end
+      
       # Busca pelo ID E company_id (segurança)
       appointment = Appointment.where(id: params[:id], company_id: company_id).first
       
@@ -135,7 +146,7 @@ class AppointmentsController < Sinatra::Base
       end
       
       # Se está alterando data/hora, validar disponibilidade e ajustar slots
-      if params_data['appointment_date']
+      if params_data['appointment_date'].present?
         # Novo horário
         data_hora_nova = Time.parse(params_data['appointment_date'].to_s)
         data_agenda_nova = data_hora_nova.in_time_zone.to_date
