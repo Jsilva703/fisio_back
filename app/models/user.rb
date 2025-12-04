@@ -9,6 +9,7 @@ class User
   field :email, type: String
   field :password_digest, type: String
   field :role, type: String, default: 'user' # user, admin, machine
+  field :status, type: String, default: 'active' # active, inactive
   field :company_id, type: BSON::ObjectId
 
   # Relacionamentos
@@ -24,6 +25,7 @@ class User
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }
   validates :password_digest, presence: true
   validates :role, inclusion: { in: ['user', 'admin', 'machine'], message: "%{value} não é um role válido" }
+  validates :status, inclusion: { in: ['active', 'inactive'] }
   validates :company_id, presence: true, unless: -> { role == 'machine' }
 
   # Método para definir a senha (criptografa automaticamente)

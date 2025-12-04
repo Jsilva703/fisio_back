@@ -50,6 +50,7 @@ require_relative './app/controllers/billing_controller'
 require_relative './app/controllers/patients_controller'
 require_relative './app/controllers/medical_records_controller'
 require_relative './app/controllers/public_booking_controller'
+require_relative './app/controllers/users_controller'
 require_relative './app/middleware/auth_middleware'
 # require_relative './app/controllers/health_controller'
 
@@ -93,6 +94,7 @@ map('/api/companies') { run CompaniesController }
 map('/api/billing') { run BillingController }
 map('/api/patients') { run PatientsController }
 map('/api/medical-records') { run MedicalRecordsController }
+map('/api/users') { run UsersController }
 map('/api/public/booking') { run PublicBookingController }
 map('/api/appointments') { run AppointmentsController }
 map('/api/schedulings') { run SchedulingsController}
