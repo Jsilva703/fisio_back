@@ -32,7 +32,20 @@ class PatientsController < Sinatra::Base
       
       # Busca por nome, email, phone ou CPF
       if params[:search]
-        search_term = /#{Regexp.escape(params[:search])}/i
+        search_value = params[:search].to_s
+        # Remove formatação do CPF/telefone para busca flexível
+        clean_search = search_value.gsub(/\D/, '')
+        
+        # Se for numérico com 10+ dígitos (CPF/telefone), busca pelos dígitos
+        if clean_search.length >= 10
+          # Cria regex que busca pelos dígitos ignorando formatação
+          # Ex: busca "12345678900" encontra "123.456.789-00"
+          cpf_regex = clean_search.chars.join('[.-]?')
+          search_term = /#{cpf_regex}/i
+        else
+          search_term = /#{Regexp.escape(search_value)}/i
+        end
+        
         query['$or'] = [
           { name: search_term },
           { email: search_term },
@@ -80,6 +93,36 @@ class PatientsController < Sinatra::Base
     rescue => e
       status 500
       { error: "Erro ao listar pacientes", message: e.message }.to_json
+    end
+  end
+
+  # --- BUSCAR PACIENTE POR CPF ---
+  get '/cpf/:cpf' do
+    begin
+      # LGPD: Apenas usuários da empresa podem ver pacientes
+      halt 403, { error: 'Acesso negado: dados protegidos por LGPD' }.to_json unless @current_company_id
+      
+      cpf = params[:cpf].to_s.gsub(/\D/, '') # Remove caracteres não numéricos
+      
+      patient = Patient.where(
+        company_id: @current_company_id,
+        cpf: /#{cpf}/
+      ).first
+      
+      if patient
+        status 200
+        {
+          status: 'success',
+          patient: patient_detailed_hash(patient)
+        }.to_json
+      else
+        status 404
+        { error: "Paciente não encontrado com este CPF" }.to_json
+      end
+      
+    rescue => e
+      status 500
+      { error: "Erro ao buscar paciente", message: e.message }.to_json
     end
   end
 

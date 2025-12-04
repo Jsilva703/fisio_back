@@ -39,41 +39,31 @@ class AppointmentsController < Sinatra::Base
         return { error: "Desculpe, o horário das #{hora_slot} já não está disponível." }.to_json
       end
 
-      # 3. Buscar ou criar paciente (se tiver CPF)
-      patient_id = nil
-      cpf = params_data['patiente_document']
+      # 3. VALIDAR que o paciente existe (obrigatório)
+      patient_id = params_data['patient_id']
       
-      if cpf.present? && !cpf.strip.empty?
-        # Busca paciente existente pelo CPF na empresa
-        existing_patient = Patient.where(
-          company_id: company_id,
-          cpf: cpf
-        ).first
-        
-        if existing_patient
-          patient_id = existing_patient.id
-        else
-          # Cria novo paciente se não existe
-          new_patient = Patient.new(
-            company_id: company_id,
-            name: params_data['patient_name'],
-            phone: params_data['patient_phone'],
-            cpf: cpf,
-            source: 'manual'
-          )
-          
-          if new_patient.save
-            patient_id = new_patient.id
-          end
-        end
+      unless patient_id.present?
+        status 400
+        return { error: "Campo patient_id é obrigatório" }.to_json
+      end
+      
+      # Verifica se o paciente existe e pertence à empresa
+      patient = Patient.where(
+        id: patient_id,
+        company_id: company_id
+      ).first
+      
+      unless patient
+        status 404
+        return { error: "Paciente não encontrado ou não pertence a esta empresa" }.to_json
       end
 
       # 4. Criar o Agendamento
       appointment = Appointment.new(
         patient_id:       patient_id,
-        patient_name:     params_data['patient_name'],
-        patient_phone:    params_data['patient_phone'],
-        patiente_document: cpf,
+        patient_name:     patient.name,
+        patient_phone:    patient.phone,
+        patiente_document: patient.cpf,
         type:             params_data['type'] || 'clinic',
         address:          params_data['address'],
         appointment_date: data_hora,
