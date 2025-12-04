@@ -120,8 +120,8 @@ class AppointmentsController < Sinatra::Base
     end
   end
 
-  # --- ATUALIZAR AGENDAMENTO ---
-    patch '/:id' do
+  # --- ATUALIZAR AGENDAMENTO (REAGENDAR) ---
+  patch '/:id' do
     begin
       params_data = env['parsed_json'] || {}
       company_id = env['current_company_id']
@@ -134,16 +134,46 @@ class AppointmentsController < Sinatra::Base
         return { error: "Agendamento não encontrado" }.to_json
       end
       
-      # Atualiza só o que veio (status, pagamento, etc.)
+      # Se está alterando data/hora, validar disponibilidade e ajustar slots
+      if params_data['appointment_date']
+        # Novo horário
+        data_hora_nova = Time.parse(params_data['appointment_date'].to_s)
+        data_agenda_nova = data_hora_nova.in_time_zone.to_date
+        hora_slot_nova = data_hora_nova.in_time_zone.strftime("%H:%M")
+        
+        # Horário antigo
+        data_hora_antiga = appointment.appointment_date
+        data_agenda_antiga = data_hora_antiga.in_time_zone.to_date
+        hora_slot_antiga = data_hora_antiga.in_time_zone.strftime("%H:%M")
+        
+        # Verificar se novo horário está disponível
+        agenda_nova = Scheduling.where(date: data_agenda_nova, company_id: company_id).first
+        
+        if agenda_nova.nil? || !agenda_nova.slots.include?(hora_slot_nova)
+          status 409
+          return { error: "Horário #{hora_slot_nova} não está disponível para #{data_agenda_nova}" }.to_json
+        end
+        
+        # DEVOLVER o horário antigo para a agenda
+        agenda_antiga = Scheduling.where(date: data_agenda_antiga, company_id: company_id).first
+        if agenda_antiga && !agenda_antiga.slots.include?(hora_slot_antiga)
+          agenda_antiga.push(slots: hora_slot_antiga)
+        end
+        
+        # CONSUMIR o novo horário
+        agenda_nova.pull(slots: hora_slot_nova)
+      end
+      
+      # Atualiza os campos enviados
       appointment.update(params_data) unless params_data.empty?
       
       { status: 'success', agendamento: appointment }.to_json
       
-      rescue => e
+    rescue => e
       status 500
-        { error: "Erro interno", mensagem: e.message }.to_json
-      end
+      { error: "Erro interno", mensagem: e.message }.to_json
     end
+  end
 
   # --- DELETAR AGENDAMENTO ---
   delete '/:id' do
