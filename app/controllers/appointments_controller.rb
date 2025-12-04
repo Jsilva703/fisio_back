@@ -39,11 +39,41 @@ class AppointmentsController < Sinatra::Base
         return { error: "Desculpe, o horário das #{hora_slot} já não está disponível." }.to_json
       end
 
-      # 3. Criar o Agendamento
+      # 3. Buscar ou criar paciente (se tiver CPF)
+      patient_id = nil
+      cpf = params_data['patiente_document']
+      
+      if cpf.present? && !cpf.strip.empty?
+        # Busca paciente existente pelo CPF na empresa
+        existing_patient = Patient.where(
+          company_id: company_id,
+          cpf: cpf
+        ).first
+        
+        if existing_patient
+          patient_id = existing_patient.id
+        else
+          # Cria novo paciente se não existe
+          new_patient = Patient.new(
+            company_id: company_id,
+            name: params_data['patient_name'],
+            phone: params_data['patient_phone'],
+            cpf: cpf,
+            source: 'manual'
+          )
+          
+          if new_patient.save
+            patient_id = new_patient.id
+          end
+        end
+      end
+
+      # 4. Criar o Agendamento
       appointment = Appointment.new(
+        patient_id:       patient_id,
         patient_name:     params_data['patient_name'],
         patient_phone:    params_data['patient_phone'],
-        patiente_document: params_data['patiente_document'],
+        patiente_document: cpf,
         type:             params_data['type'] || 'clinic',
         address:          params_data['address'],
         appointment_date: data_hora,
@@ -52,7 +82,7 @@ class AppointmentsController < Sinatra::Base
       )
 
       if appointment.save
-        # 4. CONSUMIR A VAGA (O que pediste!) ✂️
+        # 5. CONSUMIR A VAGA (O que pediste!) ✂️
         # Removemos este horário específico da lista de slots disponíveis
         agenda.pull(slots: hora_slot)
 

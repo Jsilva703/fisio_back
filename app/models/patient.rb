@@ -56,6 +56,9 @@ class Patient
   index({ company_id: 1, name: 1 })
   index({ company_id: 1, status: 1 })
   
+  # Callbacks
+  before_validation :normalize_empty_strings
+  
   # Validações
   validates :name, presence: true
   validates :phone, presence: true
@@ -112,6 +115,16 @@ class Patient
   end
   
   private
+  
+  def normalize_empty_strings
+    # Converte strings vazias em nil para campos opcionais
+    self.rg = nil if rg.blank?
+    self.blood_type = nil if blood_type.blank?
+    self.birth_date = nil if birth_date.blank?
+    self.gender = nil if gender.blank?
+    self.email = nil if email.blank?
+    self.notes = nil if notes.blank?
+  end
   
   def cpf_unique_per_company
     existing = Patient.where(
