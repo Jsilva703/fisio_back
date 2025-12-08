@@ -135,4 +135,30 @@ class RoomsController < Sinatra::Base
       { error: "Erro interno", mensagem: e.message }.to_json
     end
   end
+
+  delete '/:id' do
+    begin 
+      company_id = env['current_company_id']
+
+      room = Room.find_by(
+        company_id: company_id,
+        room_id: params[:id].to_i
+      )
+
+      unless room 
+        status 404
+        return { error: 'Sala não encontrada' }.to_json
+      end
+
+      if room.destroy
+        { status: 'success', message: 'Sala deletada com sucesso' }.to_json
+      else
+        status 422
+        { error: 'Erro ao deletar sala' }.to_json
+      end
+    rescue => e
+      status 500
+      { error: "Erro interno", mensagem: e.message }.to_json
+    end
+  end
 end
