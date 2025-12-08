@@ -42,12 +42,16 @@ require_relative './app/models/scheduling'
 require_relative './app/controllers/schedulings_controller'
 require_relative './app/models/user'
 require_relative './app/models/patient'
+require_relative './app/models/professional'
+require_relative './app/models/room'
 require_relative './app/models/medical_record'
 require_relative './app/controllers/auth_controller'
 require_relative './app/controllers/machine_controller'
 require_relative './app/controllers/companies_controller'
 require_relative './app/controllers/billing_controller'
 require_relative './app/controllers/patients_controller'
+require_relative './app/controllers/professionals_controller'
+require_relative './app/controllers/rooms_controller'
 require_relative './app/controllers/medical_records_controller'
 require_relative './app/controllers/public_booking_controller'
 require_relative './app/controllers/users_controller'
@@ -98,4 +102,6 @@ map('/api/users') { run UsersController }
 map('/api/public/booking') { run PublicBookingController }
 map('/api/appointments') { run AppointmentsController }
 map('/api/schedulings') { run SchedulingsController}
+map('/api/professionals') { run ProfessionalsController}
+map('/api/rooms') { run RoomsController }
 map('/') { run App }

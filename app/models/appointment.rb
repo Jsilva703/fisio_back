@@ -20,14 +20,20 @@ class Appointment
     field :procedure, type: String # Tipo de procedimento/consulta
     
     field :company_id, type: BSON::ObjectId
+    field :professional_id, type: Integer # ID do profissional que vai atender
+    field :room_id, type: Integer # ID da sala onde será atendido
 
     # Relacionamentos
     belongs_to :company
     belongs_to :patient, optional: true
+    belongs_to :professional, optional: true, foreign_key: :professional_id, primary_key: :professional_id
+    belongs_to :room, optional: true, foreign_key: :room_id, primary_key: :room_id
 
     # Índices
     index({ company_id: 1 })
     index({ company_id: 1, appointment_date: -1 })
+    index({ professional_id: 1, appointment_date: 1 })
+    index({ room_id: 1, appointment_date: 1 })
 
     validates :patient_name, presence: true
     validates :appointment_date, presence: true

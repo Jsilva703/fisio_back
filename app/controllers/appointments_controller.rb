@@ -43,11 +43,11 @@ class AppointmentsController < Sinatra::Base
         return { error: "Horário #{hora_slot} não está disponível" }.to_json
       end
 
-      # 4. Validar paciente
+      # 4. Validar patient_id
       patient_id = params_data['patient_id']
       
       unless patient_id.present?
-        agenda.release_slot(hora_slot)  # DEVOLVER slot se der erro
+        agenda.release_slot(hora_slot)
         status 400
         return { error: "Campo patient_id é obrigatório" }.to_json
       end
@@ -55,17 +55,77 @@ class AppointmentsController < Sinatra::Base
       patient = Patient.where(id: patient_id, company_id: company_id).first
       
       unless patient
-        agenda.release_slot(hora_slot)  # DEVOLVER slot se paciente não existir
+        agenda.release_slot(hora_slot)
         status 404
         return { error: "Paciente não encontrado ou não pertence a esta empresa" }.to_json
       end
+      
+      # 5. Validar professional_id (opcional)
+      professional_id = params_data['professional_id']
+      
+      if professional_id.present?
+        professional = Professional.find_by(
+          company_id: company_id,
+          professional_id: professional_id.to_i
+        )
+        
+        unless professional
+          agenda.release_slot(hora_slot)
+          status 404
+          return { error: "Profissional não encontrado" }.to_json
+        end
+        
+        # Verificar se profissional já tem consulta nesse horário
+        conflito = Appointment.where(
+          company_id: company_id,
+          professional_id: professional_id.to_i,
+          appointment_date: data_hora
+        ).exists?
+        
+        if conflito
+          agenda.release_slot(hora_slot)
+          status 409
+          return { error: "Profissional já possui consulta neste horário" }.to_json
+        end
+      end
+      
+      # 6. Validar room_id (opcional)
+      room_id = params_data['room_id']
+      
+      if room_id.present?
+        room = Room.find_by(
+          company_id: company_id,
+          room_id: room_id.to_i
+        )
+        
+        unless room
+          agenda.release_slot(hora_slot)
+          status 404
+          return { error: "Sala não encontrada" }.to_json
+        end
+        
+        # Verificar se sala já está ocupada nesse horário
+        conflito = Appointment.where(
+          company_id: company_id,
+          room_id: room_id.to_i,
+          appointment_date: data_hora
+        ).exists?
+        
+        if conflito
+          agenda.release_slot(hora_slot)
+          status 409
+          return { error: "Sala já está ocupada neste horário" }.to_json
+        end
+      end
 
-      # 5. Criar consulta
+      # 7. Criar consulta
       appointment = Appointment.new(
         patient_id: patient_id,
         patient_name: patient.name,
         patient_phone: patient.phone,
         patiente_document: patient.cpf,
+        professional_id: professional_id&.to_i,
+        room_id: room_id&.to_i,
         type: params_data['type'] || 'clinic',
         address: params_data['address'],
         appointment_date: data_hora,
