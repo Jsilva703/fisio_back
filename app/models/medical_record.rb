@@ -56,7 +56,7 @@ class MedicalRecord
   validates :patient_id, presence: true
   validates :company_id, presence: true
   validates :date, presence: true
-  validates :record_type, inclusion: { in: ['anamnesis', 'evolution', 'discharge'] }
+  validates :record_type, inclusion: { in: ['anamnesis', 'evolution', 'discharge', 'abandonment'] }
   validates :status, inclusion: { in: ['open', 'closed'] }
   validates :pain_scale, inclusion: { in: 0..10 }, allow_nil: true
   

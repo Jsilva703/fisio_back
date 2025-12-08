@@ -17,4 +17,19 @@ class Scheduling
     validates :date, presence: true
     validates :company_id, presence: true
     validates :date, uniqueness: { scope: :company_id, message: 'já existe para esta empresa' }
+
+    def reserve_slot(slot)
+        result = self.class.collection.update_one(
+            { _id: self.id, slots: slot },
+            { '$pull' => { slots: slot } }
+        )
+        result.modified_count > 0
+    end
+
+    def release_slot(slot)
+        self.class.collection.update_one(
+            { _id: self.id },
+            { '$push' => { slots: slot } }
+        )
+    end
 end

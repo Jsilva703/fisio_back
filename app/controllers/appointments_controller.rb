@@ -14,7 +14,7 @@ class AppointmentsController < Sinatra::Base
   end
 
   # --- CRIAR AGENDAMENTO ---
- post '/' do
+  post '/' do
     begin
       params_data = env['parsed_json'] || {}
       
@@ -23,68 +23,62 @@ class AppointmentsController < Sinatra::Base
         return { error: "Dados inválidos" }.to_json
       end
 
-      # 1. Preparar os dados
-      data_hora_str = params_data['appointment_date'].to_s
-      data_hora = Time.parse(data_hora_str) # Ex: 2025-11-26 08:00:00 -0300
-      
-      # Extrair a DATA (para achar a agenda) e a HORA (string "08:00")
-      # Usamos in_time_zone para garantir que não pegamos a data errada por causa de UTC
+      # 1. Preparar dados
+      data_hora = Time.parse(params_data['appointment_date'].to_s)
       data_agenda = data_hora.in_time_zone.to_date 
-      hora_slot   = data_hora.in_time_zone.strftime("%H:%M")
-
-      # Pegar company_id do token
+      hora_slot = data_hora.in_time_zone.strftime("%H:%M")
       company_id = env['current_company_id']
       
-      # 2. VERIFICAÇÃO DE DISPONIBILIDADE (Regra de Ouro) 🛡️
-      # Busca a configuração daquele dia DA EMPRESA
+      # 2. Buscar agenda
       agenda = Scheduling.where(date: data_agenda, company_id: company_id).first
-
-      # Se não tem agenda, ou o horário não está na lista 'slots'
-      if agenda.nil? || !agenda.slots.include?(hora_slot)
-        status 409 # Conflict
-        return { error: "Desculpe, o horário das #{hora_slot} já não está disponível." }.to_json
+      
+      if agenda.nil?
+        status 404
+        return { error: "Agenda não encontrada para esta data" }.to_json
+      end
+      
+      # 3. TENTAR RESERVAR O SLOT (operação atômica)
+      unless agenda.reserve_slot(hora_slot)
+        status 409
+        return { error: "Horário #{hora_slot} não está disponível" }.to_json
       end
 
-      # 3. VALIDAR que o paciente existe (obrigatório)
+      # 4. Validar paciente
       patient_id = params_data['patient_id']
       
       unless patient_id.present?
+        agenda.release_slot(hora_slot)  # DEVOLVER slot se der erro
         status 400
         return { error: "Campo patient_id é obrigatório" }.to_json
       end
       
-      # Verifica se o paciente existe e pertence à empresa
-      patient = Patient.where(
-        id: patient_id,
-        company_id: company_id
-      ).first
+      patient = Patient.where(id: patient_id, company_id: company_id).first
       
       unless patient
+        agenda.release_slot(hora_slot)  # DEVOLVER slot se paciente não existir
         status 404
         return { error: "Paciente não encontrado ou não pertence a esta empresa" }.to_json
       end
 
-      # 4. Criar o Agendamento
+      # 5. Criar consulta
       appointment = Appointment.new(
-        patient_id:       patient_id,
-        patient_name:     patient.name,
-        patient_phone:    patient.phone,
+        patient_id: patient_id,
+        patient_name: patient.name,
+        patient_phone: patient.phone,
         patiente_document: patient.cpf,
-        type:             params_data['type'] || 'clinic',
-        address:          params_data['address'],
+        type: params_data['type'] || 'clinic',
+        address: params_data['address'],
         appointment_date: data_hora,
-        price:            params_data['price'].to_f,
-        company_id:       company_id
+        price: params_data['price'].to_f,
+        company_id: company_id
       )
 
       if appointment.save
-        # 5. CONSUMIR A VAGA (O que pediste!) ✂️
-        # Removemos este horário específico da lista de slots disponíveis
-        agenda.pull(slots: hora_slot)
-
         status 201
         return { status: 'success', agendamento: appointment }.to_json
       else
+        # Se falhar ao salvar, DEVOLVER o slot
+        agenda.release_slot(hora_slot)
         status 422
         return { error: "Erro ao salvar", detalhes: appointment.errors.messages }.to_json
       end
@@ -157,28 +151,41 @@ class AppointmentsController < Sinatra::Base
         data_agenda_antiga = data_hora_antiga.in_time_zone.to_date
         hora_slot_antiga = data_hora_antiga.in_time_zone.strftime("%H:%M")
         
-        # Verificar se novo horário está disponível
+        # Buscar agenda nova
         agenda_nova = Scheduling.where(date: data_agenda_nova, company_id: company_id).first
         
-        if agenda_nova.nil? || !agenda_nova.slots.include?(hora_slot_nova)
+        if agenda_nova.nil?
+          status 404
+          return { error: "Agenda não encontrada para #{data_agenda_nova}" }.to_json
+        end
+        
+        # TENTAR RESERVAR novo slot
+        unless agenda_nova.reserve_slot(hora_slot_nova)
           status 409
-          return { error: "Horário #{hora_slot_nova} não está disponível para #{data_agenda_nova}" }.to_json
+          return { error: "Horário #{hora_slot_nova} não está disponível" }.to_json
         end
         
-        # DEVOLVER o horário antigo para a agenda
+        # DEVOLVER slot antigo
         agenda_antiga = Scheduling.where(date: data_agenda_antiga, company_id: company_id).first
-        if agenda_antiga && !agenda_antiga.slots.include?(hora_slot_antiga)
-          agenda_antiga.push(slots: hora_slot_antiga)
+        if agenda_antiga
+          agenda_antiga.release_slot(hora_slot_antiga)
         end
-        
-        # CONSUMIR o novo horário
-        agenda_nova.pull(slots: hora_slot_nova)
       end
       
-      # Atualiza os campos enviados
-      appointment.update(params_data) unless params_data.empty?
-      
-      { status: 'success', agendamento: appointment }.to_json
+      # Atualizar consulta
+      if appointment.update(params_data)
+        status 200
+        { status: 'success', agendamento: appointment }.to_json
+      else
+        # Se falhar ao atualizar e mudou horário, reverter
+        if params_data['appointment_date'].present?
+          agenda_nova.release_slot(hora_slot_nova)
+          agenda_antiga.reserve_slot(hora_slot_antiga) if agenda_antiga
+        end
+        
+        status 422
+        { error: "Erro ao atualizar", detalhes: appointment.errors.messages }.to_json
+      end
       
     rescue => e
       status 500
@@ -197,9 +204,26 @@ class AppointmentsController < Sinatra::Base
         return { error: "Agendamento não encontrado" }.to_json
       end
       
-      appointment.delete
+      # Pegar dados antes de deletar
+      data_hora = appointment.appointment_date
+      data_agenda = data_hora.in_time_zone.to_date
+      hora_slot = data_hora.in_time_zone.strftime("%H:%M")
       
-      { status: 'success', mensagem: "Agendamento deletado" }.to_json
+      # Deletar consulta
+      if appointment.destroy
+        # DEVOLVER slot para agenda
+        agenda = Scheduling.where(date: data_agenda, company_id: company_id).first
+        if agenda
+          agenda.release_slot(hora_slot)
+        end
+        
+        status 200
+        { status: 'success', mensagem: "Agendamento cancelado e horário liberado" }.to_json
+      else
+        status 422
+        { error: "Erro ao cancelar" }.to_json
+      end
+      
     rescue => e
       status 500
       { error: "Erro ao deletar", mensagem: e.message }.to_json

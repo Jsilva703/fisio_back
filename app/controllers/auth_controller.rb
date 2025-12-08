@@ -10,7 +10,7 @@ class AuthController < Sinatra::Base
   end
 
   # Chave secreta para JWT (coloque no .env em produção)
-  JWT_SECRET = ENV['JWT_SECRET'] || 'sua_chave_secreta_aqui_troque_em_producao'
+  JWT_SECRET = ENV['JWT_SECRET']
 
   # --- REGISTRO DE USUÁRIO ---
   post '/register' do

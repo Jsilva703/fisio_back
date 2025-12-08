@@ -1,1 +1,0 @@
-contas [] = Conta.new[10]
