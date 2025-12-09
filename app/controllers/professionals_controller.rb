@@ -39,6 +39,29 @@ class ProfessionalsController < Sinatra::Base
     end
   end
 
+    get '/:id/appointments' do
+      begin
+        company_id = env['current_company_id']
+        professional_id = params[:id].to_i
+
+        start_date = params[:start_date] ? Time.parse(params[:start_date]) : Time.now.beginning_of_month
+        end_date = params[:end_date] ? Time.parse(params[:end_date]) : Time.now.end_of_month
+
+        appointments = Appointment.where(
+          company_id: company_id,
+          professional_id: professional_id,
+          :appointment_date.ne => nil, # <-- Adiciona este filtro!
+          :appointment_date.gte => start_date,
+          :appointment_date.lte => end_date
+        ).asc(:appointment_date)
+
+        { status: 'success', atendimentos: appointments, count: appointments.count }.to_json
+      rescue => e
+        status 500
+        { error: "Erro ao buscar atendimentos", mensagem: e.message }.to_json
+      end
+    end
+
   # --- BUSCAR PROFISSIONAL POR ID ---
   get '/:id' do
     begin

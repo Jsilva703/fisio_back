@@ -10,7 +10,9 @@ class Room
   field :description, type: String
   field :capacity, type: Integer, default: 1
   field :color, type: String, default: '#10B981' # Para visualização na agenda
-  field :status, type: String, default: 'active' # active, inactive
+  field :status, type: String, default: 'active' # active, inactive, manutenção
+
+  field :settings, type: Hash, default: {} # Configurações customizadas
   
   # Relacionamentos
   belongs_to :company

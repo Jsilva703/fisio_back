@@ -150,17 +150,23 @@ class AppointmentsController < Sinatra::Base
   end
 
   # --- LISTAR AGENDAMENTOS ---
-  get '/' do
-    begin
-      # Filtrar apenas agendamentos DA EMPRESA do usuário
-      company_id = env['current_company_id']
-      agendamentos = Appointment.where(company_id: company_id).desc(:appointment_date)
-      { status: 'success', agendamentos: agendamentos }.to_json
-    rescue => e
-      status 500
-      { error: "Erro ao buscar agendamentos", mensagem: e.message }.to_json
+ get '/' do
+  begin
+    company_id = env['current_company_id']
+    agendamentos = Appointment.where(company_id: company_id)
+
+    # Filtro por professional_id (se enviado)
+    if params[:professional_id]
+      agendamentos = agendamentos.where(professional_id: params[:professional_id].to_i)
     end
+
+    agendamentos = agendamentos.desc(:appointment_date)
+    { status: 'success', agendamentos: agendamentos }.to_json
+  rescue => e
+    status 500
+    { error: "Erro ao buscar agendamentos", mensagem: e.message }.to_json
   end
+end
 
   # --- BUSCAR AGENDAMENTO POR ID ---
   get '/:id' do
@@ -179,7 +185,6 @@ class AppointmentsController < Sinatra::Base
       { error: "Erro ao buscar agendamento", mensagem: e.message }.to_json
     end
   end
-
   # --- ATUALIZAR AGENDAMENTO (REAGENDAR) ---
   patch '/:id' do
     begin

@@ -5,7 +5,7 @@ class Scheduling
 
     field :date, type: Date
     field :slots, type: Array, default: []
-    field :enabled, type: Integer, default: 0 # 0 = disponivel 1 = Ocupado 2 = fechada
+    field :enabled, type: Integer, default: 0 # 0 = disponivel 1 = Ocupado 2 = fechada 3 = feriado
     field :company_id, type: BSON::ObjectId
     field :professional_id, type: Integer # Agenda vinculada a um profissional específico
     field :room_id, type: Integer # Agenda vinculada a uma sala específica
