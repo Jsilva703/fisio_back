@@ -28,7 +28,9 @@ class RoomsController < Sinatra::Base
         description: params_data['description'],
         capacity: params_data['capacity'] || 1,
         color: params_data['color'] || '#10B981',
-        company_id: company_id
+        company_id: company_id,
+        status: params_data['status'] || 'active',
+        settings: params_data['settings'] || {}
       )
 
       if room.save
@@ -120,6 +122,7 @@ class RoomsController < Sinatra::Base
       update_fields[:capacity] = params_data['capacity'] if params_data['capacity']
       update_fields[:color] = params_data['color'] if params_data['color']
       update_fields[:status] = params_data['status'] if params_data['status']
+      update_fields[:settings] = params_data['settings'] if params_data['settings']
 
       if room.update_attributes(update_fields)
         { status: 'success', sala: room }.to_json
