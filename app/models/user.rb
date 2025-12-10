@@ -9,6 +9,7 @@ class User
   field :email, type: String
   field :password_digest, type: String
   field :role, type: String, default: 'user' # user, admin, machine
+  field :phone, type: String
   field :status, type: String, default: 'active' # active, inactive
   field :company_id, type: BSON::ObjectId
 

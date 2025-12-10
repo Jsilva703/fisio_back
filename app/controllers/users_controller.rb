@@ -58,6 +58,7 @@ class UsersController < Sinatra::Base
           name: user.name,
           email: user.email,
           role: user.role,
+          phone: user.phone,
           status: user.status,
           company_id: user.company_id&.to_s,
           created_at: user.created_at,
@@ -101,6 +102,7 @@ class UsersController < Sinatra::Base
           email: user.email,
           role: user.role,
           status: user.status,
+          phone: user.phone,
           company_id: user.company_id&.to_s,
           created_at: user.created_at,
           updated_at: user.updated_at
@@ -164,6 +166,7 @@ class UsersController < Sinatra::Base
         name: params_data['name'],
         email: params_data['email'],
         password: params_data['password'],
+        phone: params_data['phone'],
         role: role,
         company_id: @current_company_id,
         status: 'active'
@@ -177,6 +180,7 @@ class UsersController < Sinatra::Base
           user: {
             id: user.id.to_s,
             name: user.name,
+            phone: user.phone,
             email: user.email,
             role: user.role,
             company_id: user.company_id.to_s
@@ -213,7 +217,7 @@ class UsersController < Sinatra::Base
       end
       
       # Atualizar campos permitidos
-      allowed_fields = ['name', 'email', 'status', 'role']
+      allowed_fields = ['name', 'email', 'status', 'role', 'phone']
       update_data = params_data.select { |k, v| allowed_fields.include?(k) }
       
       # Se está mudando email, verificar se já existe
@@ -233,6 +237,7 @@ class UsersController < Sinatra::Base
             id: user.id.to_s,
             name: user.name,
             email: user.email,
+            phone: user.phone,
             role: user.role,
             status: user.status
           }
