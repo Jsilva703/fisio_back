@@ -1,0 +1,49 @@
+name: CI - Lint & Security
+
+on:
+  push:
+    branches:
+      - main
+      - beta
+  pull_request:
+    branches:
+      - main
+      - beta
+
+jobs:
+  lint_and_security:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'    # coloque a versão do seu projeto
+          bundler-cache: true
+
+      - name: Install dependencies
+        run: |
+          bundle install
+
+      - name: Run RuboCop
+        run: |
+          bundle exec rubocop || true   # não quebra o build agora, só alerta
+
+      - name: Run Brakeman (Security)
+        run: |
+          bundle exec brakeman -q --summary
+
+      - name: Run Bundle Audit
+        run: |
+          bundle exec bundle audit check --update
+
+      - name: ERB Lint (Opcional)
+        run: |
+          if bundle list | grep "erb_lint" > /dev/null; then
+            bundle exec erblint app/views
+          else
+            echo "ERB Lint not installed, skipping..."
+          fi

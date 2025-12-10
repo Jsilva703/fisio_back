@@ -13,5 +13,9 @@ gem 'bcrypt', '~> 3.1'
 gem 'jwt', '~> 2.7'
 
 group :development do
-  gem 'rerun'
+  gem 'rubocop', require: false
+  gem 'rubocop-rails', require: false
+  gem 'brakeman', require: false
+  gem 'bundler-audit', require: false
+  gem 'erb_lint', require: false # opcional
 end
