@@ -100,4 +100,28 @@ end
       { error: 'Dia não encontrado' }.to_json
     end
   end
+
+  put '/:id' do
+  begin
+    agenda = Scheduling.where(id: params[:id], company_id: env['current_company_id']).first
+    halt 404, { error: "Agenda não encontrada" }.to_json unless agenda
+
+    update_data = env['parsed_json'] || JSON.parse(request.body.read)
+    agenda.slots = update_data['slots'] if update_data['slots']
+    agenda.date = Date.parse(update_data['date']) if update_data['date']
+    agenda.professional_id = update_data['professional_id'].to_i if update_data['professional_id']
+    agenda.room_id = update_data['room_id'] if update_data['room_id']
+    agenda.enabled = update_data['enabled'].to_i if update_data['enabled']
+
+    if agenda.save
+      { status: 'success', message: 'Agenda atualizada', data: agenda }.to_json
+    else
+      status 422
+      { error: "Erro ao atualizar", detalhes: agenda.errors.messages }.to_json
+    end
+  rescue => e
+    status 500
+    { error: "Erro interno", mensagem: e.message }.to_json
+  end
+end
 end

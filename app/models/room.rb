@@ -27,7 +27,7 @@ class Room
   validates :name, presence: true
   validates :company_id, presence: true
   validates :room_id, presence: true, uniqueness: { scope: :company_id }
-  validates :status, inclusion: { in: ['active', 'inactive'] }
+  validates :status, inclusion: { in: ['active', 'inactive', 'maintenance'] }
   validates :capacity, numericality: { greater_than: 0 }, allow_nil: true
   
   # Callbacks

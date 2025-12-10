@@ -18,6 +18,7 @@ class Appointment
     field :payment_status, type: String, default: 'pending' 
     field :status, type: String, default: 'scheduled'
     field :procedure, type: String # Tipo de procedimento/consulta
+    field :payment_method, type: String # cash, card, insurance, other
     
     field :company_id, type: BSON::ObjectId
     field :professional_id, type: Integer # ID do profissional que vai atender

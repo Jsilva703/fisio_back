@@ -129,6 +129,7 @@ class AppointmentsController < Sinatra::Base
         type: params_data['type'] || 'clinic',
         address: params_data['address'],
         appointment_date: data_hora,
+        payment_method: params_data['payment_method'],
         price: params_data['price'].to_f,
         company_id: company_id
       )
@@ -186,59 +187,54 @@ end
     end
   end
   # --- ATUALIZAR AGENDAMENTO (REAGENDAR) ---
-  patch '/:id' do
+    patch '/:id' do
     begin
       params_data = env['parsed_json'] || {}
       company_id = env['current_company_id']
-      
+
       if params_data.empty?
         status 400
         return { error: "Dados não fornecidos" }.to_json
       end
-      
-      # Busca pelo ID E company_id (segurança)
+
       appointment = Appointment.where(id: params[:id], company_id: company_id).first
-      
+
       if appointment.nil?
         status 404
         return { error: "Agendamento não encontrado" }.to_json
       end
-      
+
       # Se está alterando data/hora, validar disponibilidade e ajustar slots
       if params_data['appointment_date'].present?
-        # Novo horário
         data_hora_nova = Time.parse(params_data['appointment_date'].to_s)
         data_agenda_nova = data_hora_nova.in_time_zone.to_date
         hora_slot_nova = data_hora_nova.in_time_zone.strftime("%H:%M")
-        
-        # Horário antigo
+
         data_hora_antiga = appointment.appointment_date
         data_agenda_antiga = data_hora_antiga.in_time_zone.to_date
         hora_slot_antiga = data_hora_antiga.in_time_zone.strftime("%H:%M")
-        
-        # Buscar agenda nova
+
         agenda_nova = Scheduling.where(date: data_agenda_nova, company_id: company_id).first
-        
+
         if agenda_nova.nil?
           status 404
           return { error: "Agenda não encontrada para #{data_agenda_nova}" }.to_json
         end
-        
-        # TENTAR RESERVAR novo slot
+
         unless agenda_nova.reserve_slot(hora_slot_nova)
           status 409
           return { error: "Horário #{hora_slot_nova} não está disponível" }.to_json
         end
-        
-        # DEVOLVER slot antigo
+
         agenda_antiga = Scheduling.where(date: data_agenda_antiga, company_id: company_id).first
-        if agenda_antiga
-          agenda_antiga.release_slot(hora_slot_antiga)
-        end
+        agenda_antiga.release_slot(hora_slot_antiga) if agenda_antiga
       end
-      
-      # Atualizar consulta
-      if appointment.update(params_data)
+
+      # Atualizar método de pagamento se enviado
+      appointment.payment_method = params_data['payment_method'] if params_data['payment_method']
+
+      # Atualizar demais campos
+      if appointment.update_attributes(params_data)
         status 200
         { status: 'success', agendamento: appointment }.to_json
       else
@@ -247,11 +243,11 @@ end
           agenda_nova.release_slot(hora_slot_nova)
           agenda_antiga.reserve_slot(hora_slot_antiga) if agenda_antiga
         end
-        
+
         status 422
         { error: "Erro ao atualizar", detalhes: appointment.errors.messages }.to_json
       end
-      
+
     rescue => e
       status 500
       { error: "Erro interno", mensagem: e.message }.to_json
