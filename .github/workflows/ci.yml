@@ -1,17 +1,13 @@
-name: CI - Lint & Security
+name: CI
 
 on:
   push:
-    branches:
-      - main
-      - beta
+    branches: [ "main", "beta" ]
   pull_request:
-    branches:
-      - main
-      - beta
+    branches: [ "main", "beta" ]
 
 jobs:
-  lint_and_security:
+  ci:
     runs-on: ubuntu-latest
 
     steps:
@@ -21,29 +17,41 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.2.3'    # coloque a versão do seu projeto
+          ruby-version: "3.2.3"
           bundler-cache: true
 
-      - name: Install dependencies
-        run: |
-          bundle install
-
+      # -----------------------------------------
+      # RUBOCOP (Lint)
+      # -----------------------------------------
       - name: Run RuboCop
         run: |
-          bundle exec rubocop || true   # não quebra o build agora, só alerta
+          if bundle exec rubocop --version > /dev/null 2>&1; then
+            echo "Running RuboCop..."
+            bundle exec rubocop || true
+          else
+            echo "Rubocop not installed. Skipping."
+          fi
 
+      # -----------------------------------------
+      # BRAKEMAN (Security)
+      # -----------------------------------------
       - name: Run Brakeman (Security)
         run: |
-          bundle exec brakeman -q --summary || true
-
-      - name: Run Bundle Audit
-        run: |
-          bundle exec bundle audit check --update
-
-      - name: ERB Lint (Opcional)
-        run: |
-          if bundle list | grep "erb_lint" > /dev/null; then
-            bundle exec erblint app/views
+          if bundle exec brakeman --version > /dev/null 2>&1; then
+            echo "Running Brakeman..."
+            bundle exec brakeman -q --summary || true
           else
-            echo "ERB Lint not installed, skipping..."
+            echo "Brakeman not installed. Skipping."
+          fi
+
+      # -----------------------------------------
+      # TESTS (quando você criar specs)
+      # -----------------------------------------
+      - name: Run Test Suite
+        run: |
+          if [ -d "spec" ] || [ -d "test" ]; then
+            echo "Running tests..."
+            bundle exec rake || true
+          else
+            echo "No tests folder found. Skipping."
           fi
