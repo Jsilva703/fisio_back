@@ -213,6 +213,24 @@ class MedicalRecordsController < Sinatra::Base
     end
   end
 
+    get '/' do
+    begin
+      company_id = env['current_company_id']
+      page = (params[:page] || 1).to_i
+      per_page = (params[:per_page] || 20).to_i
+
+      records = MedicalRecord.where(company_id: company_id)
+                            .skip((page - 1) * per_page)
+                            .limit(per_page)
+                            .desc(:created_at)
+
+      { status: 'success', prontuarios: records, page: page, per_page: per_page, total: records.count }.to_json
+    rescue => e
+      status 500
+      { error: "Erro ao buscar prontuários", mensagem: e.message }.to_json
+    end
+  end
+
   # --- BUSCAR PRONTUÁRIOS POR PERÍODO ---
   get '/company/period' do
     begin
