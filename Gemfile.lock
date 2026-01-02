@@ -73,9 +73,7 @@ GEM
     loofah (2.24.1)
       crass (~> 1.0.2)
       nokogiri (>= 1.12.0)
-    mercadopago (3.1.0)
-      faraday (~> 0.9)
-      json (~> 2.3)
+    # mercadopago gem removed
     minitest (5.26.2)
     mongo (2.22.0)
       base64
@@ -204,7 +202,7 @@ DEPENDENCIES
   erb_lint
   json
   jwt (~> 2.7)
-  mercadopago
+  # mercadopago (removed)
   mongoid (~> 9.0)
   puma (~> 6.0)
   rack-attack

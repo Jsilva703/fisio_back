@@ -17,7 +17,7 @@ gem 'sinatra', '~> 4.0'
 gem 'redis'
 gem 'sidekiq'
 gem 'sidekiq-scheduler'
-gem 'mercadopago'
+## Mercado Pago gem removed — payments are handled externally via provider panel
 
 group :development do
   gem 'brakeman', require: false

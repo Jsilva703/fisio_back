@@ -50,6 +50,7 @@ require_relative './app/controllers/auth/auth_controller'
 require_relative './app/controllers/machine/machine_controller'
 require_relative './app/controllers/companies/companies_controller'
 require_relative './app/controllers/billing/billing_controller'
+require_relative './app/controllers/billing/checkout_controller'
 require_relative './app/controllers/patients/patients_controller'
 require_relative './app/controllers/professionals/professionals_controller'
 require_relative './app/controllers/rooms/rooms_controller'
@@ -57,6 +58,8 @@ require_relative './app/controllers/medical_records/medical_records_controller'
 require_relative './app/controllers/public_booking/public_booking_controller'
 require_relative './app/controllers/users/users_controller'
 require_relative './app/middleware/auth_middleware'
+require_relative './app/controllers/admin/users_controller'
+require_relative './app/controllers/public/signup_company_controller'
 # expenses files
 require_relative './app/models/expense'
 require_relative './app/controllers/expenses/expenses_controller'
@@ -124,6 +127,7 @@ map('/api/auth') { run Auth::AuthController }
 map('/api/machine') { run Machine::MachineController }
 map('/api/companies') { run Companies::CompaniesController }
 map('/api/billing') { run Billing::BillingController }
+map('/api/billing/checkout') { run Billing::CheckoutController }
 map('/api/patients') { run Patients::PatientsController }
 map('/api/medical-records') { run MedicalRecords::MedicalRecordsController }
 map('/api/users') { run Users::UsersController }
@@ -133,4 +137,6 @@ map('/api/schedulings') { run Schedulings::SchedulingsController }
 map('/api/professionals') { run Professionals::ProfessionalsController }
 map('/api/rooms') { run Rooms::RoomsController }
 map('/api/expenses') { run Expenses::ExpensesController }
+map('/api/admin/users') { run Admin::UsersController }
+map('/api/public/signup_company') { run Public::SignupCompanyController }
 map('/') { run App }

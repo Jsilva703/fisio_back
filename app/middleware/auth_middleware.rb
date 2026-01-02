@@ -19,6 +19,7 @@ class AuthMiddleware
     public_paths = [
       '/health',
       '/api/public/booking', # Agendamento online público (deve vir ANTES de /api/auth)
+      '/api/public',
       '/api/auth/login',
       '/api/auth/register',
       '/api/auth' # Permite todas as rotas de auth

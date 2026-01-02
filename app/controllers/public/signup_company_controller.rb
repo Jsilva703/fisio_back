@@ -1,0 +1,92 @@
+# frozen_string_literal: true
+
+require 'sinatra/base'
+require 'json'
+require 'jwt'
+require_relative '../../models/company'
+require_relative '../../models/user'
+
+module Public
+  class SignupCompanyController < Sinatra::Base
+    configure do
+      enable :logging
+    end
+
+    before do
+      content_type :json
+    end
+
+    # POST /
+    # Body: { company: { name, email, slug, cnpj, phone }, admin: { name, email, password, phone } }
+    post '/' do
+      begin
+        data = env['parsed_json'] || {}
+        company_data = data['company'] || {}
+        admin_data = data['admin'] || {}
+
+        if company_data.empty? || admin_data.empty?
+          status 400
+          return({ error: 'company_and_admin_required' }.to_json)
+        end
+
+        # Create company
+        company = Company.new(
+          name: company_data['name'],
+          slug: company_data['slug'],
+          email: company_data['email'],
+          phone: company_data['phone'],
+          cnpj: company_data['cnpj']
+        )
+
+        # set defaults
+        company.plan = company_data['plan'] || 'basic'
+        company.status = 'active' unless company.status
+
+        unless company.save
+          status 422
+          return({ error: 'company_creation_failed', messages: company.errors.full_messages }.to_json)
+        end
+
+        # Create admin user
+        user = User.new(
+          name: admin_data['name'],
+          email: admin_data['email'],
+          phone: admin_data['phone'],
+          role: 'admin',
+          company_id: company.id
+        )
+        user.password = admin_data['password'] || SecureRandom.hex(8)
+
+        unless user.save
+          # rollback company if user creation fails
+          company.destroy
+          status 422
+          return({ error: 'user_creation_failed', messages: user.errors.full_messages }.to_json)
+        end
+
+        # Generate JWT token
+        jwt_secret = ENV['JWT_SECRET'] || 'sua_chave_secreta_aqui_troque_em_producao'
+        payload = {
+          user_id: user.id.to_s,
+          email: user.email,
+          role: user.role,
+          company_id: company.id.to_s,
+          exp: Time.now.to_i + (24 * 3600)
+        }
+        token = JWT.encode(payload, jwt_secret, 'HS256')
+
+        status 201
+        {
+          status: 'success',
+          company_id: company.id.to_s,
+          user_id: user.id.to_s,
+          token: token,
+          company: company
+        }.to_json
+      rescue StandardError => e
+        status 500
+        { error: 'internal_error', message: e.message }.to_json
+      end
+    end
+  end
+end

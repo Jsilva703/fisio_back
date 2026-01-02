@@ -1,0 +1,36 @@
+plans:
+  free:
+    id: free
+    name: Free
+    price_cents: 0
+    interval: none
+    seats: 1
+    description: "Plano gratuito com funcionalidades básicas"
+  basic:
+    id: basic
+    name: Basic
+    price_cents: 9900
+    interval: monthly
+    seats: 1
+    description: "Agendamentos básicos e funcionalidades essenciais"
+  standard:
+    id: standard
+    name: Standard
+    price_cents: 19900
+    interval: monthly
+    seats: 3
+    description: "Recursos avançados + mais usuários"
+  premium:
+    id: premium
+    name: Premium
+    price_cents: 39900
+    interval: monthly
+    seats: 10
+    description: "Funcionalidades completas e suporte prioritário"
+  enterprise:
+    id: enterprise
+    name: Enterprise
+    price_cents: 99900
+    interval: monthly
+    seats: 50
+    description: "Plano para grandes clientes com SLA personalizado"

@@ -10,7 +10,7 @@ class User
   field :name, type: String
   field :email, type: String
   field :password_digest, type: String
-  field :role, type: String, default: 'user' # user, admin, machine
+  field :role, type: String, default: 'user' # user, admin, gestor, atendente, machine
   field :phone, type: String
   field :status, type: String, default: 'active' # active, inactive
   field :company_id, type: BSON::ObjectId
@@ -27,7 +27,7 @@ class User
   validates :email, presence: true, uniqueness: true
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }
   validates :password_digest, presence: true
-  validates :role, inclusion: { in: %w[user admin machine], message: '%<value>s não é um role válido' }
+  validates :role, inclusion: { in: %w[user admin gestor atendente machine], message: '%<value>s não é um role válido' }
   validates :status, inclusion: { in: %w[active inactive] }
   validates :company_id, presence: true, unless: -> { role == 'machine' }
 
@@ -40,6 +40,18 @@ class User
   # Método para verificar a senha
   def authenticate(password)
     BCrypt::Password.new(password_digest) == password
+  end
+
+  def admin?
+    role == 'admin'
+  end
+
+  def gestor?
+    role == 'gestor'
+  end
+
+  def atendente?
+    role == 'atendente'
   end
 
   # Retorna dados do usuário sem a senha
