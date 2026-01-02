@@ -1,0 +1,10 @@
+---
+:concurrency: 5
+:queues:
+  - default
+:schedule:
+  keep_alive_worker:
+    cron: "*/3 * * * *"
+    class: "KeepAliveWorker"
+    queue: default
+    description: "Ping app to prevent idling every 3 minutes"

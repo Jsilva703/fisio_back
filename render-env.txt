@@ -1,0 +1,14 @@
+# Bloco pronto para colar no painel do Render
+# Substitua os valores de exemplo (`YOUR_*`) antes de salvar em produção.
+
+MONGODB_URI="mongodb+srv://fisio:19751906@agendobot.cktgb.mongodb.net/djm_fisio?retryWrites=true&w=majority&appName=agendobot"
+JWT_SECRET=sua_chave_secreta_super_segura_1764691955
+RACK_ENV=production
+
+# Novas variáveis necessárias
+REDIS_URL=redis://:YOUR_REDIS_PASSWORD@your-redis-host:6379/0
+APP_BASE_URL=https://meu-app.onrender.com
+SIDEKIQ_WEB_USER=admin
+SIDEKIQ_WEB_PASSWORD=uma_senha_forte_aqui
+
+# Observação: não commit este arquivo com segredos no repositório.

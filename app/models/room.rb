@@ -1,10 +1,12 @@
+# frozen_string_literal: true
+
 class Room
   include Mongoid::Document
   include Mongoid::Timestamps
 
   # ID Sequencial customizado
   field :room_id, type: Integer # 10, 11, 12, 13...
-  
+
   # Informações Básicas
   field :name, type: String # "Sala 1", "Consultório A"
   field :description, type: String
@@ -13,45 +15,45 @@ class Room
   field :status, type: String, default: 'active' # active, inactive, manutenção
 
   field :settings, type: Hash, default: {} # Configurações customizadas
-  
+
   # Relacionamentos
   belongs_to :company
   has_many :appointments
   has_many :schedulings
-  
+
   # Índices
   index({ company_id: 1, room_id: 1 }, { unique: true })
   index({ company_id: 1, status: 1 })
-  
+
   # Validações
   validates :name, presence: true
   validates :company_id, presence: true
   validates :room_id, presence: true, uniqueness: { scope: :company_id }
-  validates :status, inclusion: { in: ['active', 'inactive', 'maintenance'] }
+  validates :status, inclusion: { in: %w[active inactive maintenance] }
   validates :capacity, numericality: { greater_than: 0 }, allow_nil: true
-  
+
   # Callbacks
   before_validation :generate_room_id, on: :create
-  
+
   # Métodos
   def active?
     status == 'active'
   end
-  
+
   def available?
-    active? && capacity.to_i > 0
+    active? && capacity.to_i.positive?
   end
-  
+
   private
-  
+
   def generate_room_id
     return if room_id.present?
-    
+
     # Busca o maior room_id da empresa
     last_room = Room.where(company_id: company_id)
                     .order_by(room_id: :desc)
                     .first
-    
+
     # Se não existe nenhum, começa do 10, senão soma +1
     self.room_id = last_room ? last_room.room_id + 1 : 10
   end

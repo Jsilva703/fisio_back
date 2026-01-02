@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'mongoid'
 require './config/mongoid.yml'
 
@@ -18,9 +20,9 @@ patients.each do |p|
 end
 
 # Busca exata
-exact = Patient.where(cpf: "12345678900").to_a
+exact = Patient.where(cpf: '12345678900').to_a
 puts "\nBusca exata '12345678900': #{exact.count}"
 
 # Busca com formatação
-formatted = Patient.where(cpf: "123.456.789-00").to_a
+formatted = Patient.where(cpf: '123.456.789-00').to_a
 puts "Busca formatada '123.456.789-00': #{formatted.count}"

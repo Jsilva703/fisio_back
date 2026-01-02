@@ -1,3 +1,6 @@
+# frozen_string_literal: true
+# frozen_string_literal: true
+
 # Arquivo de ambiente para jobs e scripts
 require 'bundler/setup'
 require 'dotenv'
@@ -15,3 +18,4 @@ require_relative '../app/models/company'
 require_relative '../app/models/user'
 require_relative '../app/models/appointment'
 require_relative '../app/models/scheduling'
+require_relative 'initializers/sidekiq'
