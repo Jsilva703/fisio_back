@@ -67,13 +67,8 @@ Dir[File.join(File.dirname(__FILE__), 'app', 'services', '**', '*.rb')].sort.eac
   require File.expand_path(f)
 end
 
-# Load security middlewares (Rack::Attack)
-begin
-  require_relative './config/initializers/rack_attack'
-  use Rack::Attack
-rescue LoadError
-  # if not present, continue without it
-end
+# NOTE: Rack::Attack will be loaded after CORS to ensure preflight requests
+# are handled by Rack::Cors before any throttling/blocking.
 
 class App < Sinatra::Base
   configure do
@@ -112,6 +107,14 @@ use Rack::Cors do
              credentials: allow_credentials,
              expose: ['Authorization']
   end
+end
+
+ # Load Rack::Attack after CORS so preflight OPTIONS are not blocked
+begin
+  require_relative './config/initializers/rack_attack'
+  use Rack::Attack
+rescue LoadError
+  # if not present, continue without it
 end
 
 use JsonParserMiddleware
