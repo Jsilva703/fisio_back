@@ -1,11 +1,24 @@
 # frozen_string_literal: true
 
 require 'rack/attack'
+require 'active_support/cache'
 
 class Rack::Attack
   # Allow local traffic (loopback)
   safelist('allow-localhost') do |req|
     ['127.0.0.1', '::1'].include?(req.ip)
+  end
+
+  # Ensure a cache store is configured for Rack::Attack to avoid MissingStoreError
+  begin
+    Rack::Attack.cache.store ||= ActiveSupport::Cache::MemoryStore.new
+  rescue => e
+    warn "Rack::Attack cache setup failed: #{e.message}"
+  end
+
+  # Allow CORS preflight OPTIONS requests to bypass throttles/blocklists
+  safelist('allow preflight options') do |req|
+    req.request_method == 'OPTIONS'
   end
 
   # Throttle requests by IP: 60 requests per minute
