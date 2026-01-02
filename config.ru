@@ -57,6 +57,9 @@ require_relative './app/controllers/medical_records/medical_records_controller'
 require_relative './app/controllers/public_booking/public_booking_controller'
 require_relative './app/controllers/users/users_controller'
 require_relative './app/middleware/auth_middleware'
+# expenses files
+require_relative './app/models/expense'
+require_relative './app/controllers/expenses/expenses_controller'
 # require_relative './app/controllers/health_controller'
 
 # Load service objects
@@ -96,10 +99,18 @@ class App < Sinatra::Base
   end
 end
 
+# Configurable CORS: set APP_FRONT_URL to the frontend origin (or leave blank to allow any)
+front_origin = ENV['APP_FRONT_URL'] || '*'
+allow_credentials = ENV['CORS_ALLOW_CREDENTIALS'] == 'true'
+
 use Rack::Cors do
   allow do
-    origins '*'
-    resource '*', headers: :any, methods: %i[get post put patch delete options]
+    origins front_origin
+    resource '*',
+             headers: :any,
+             methods: %i[get post put patch delete options],
+             credentials: allow_credentials,
+             expose: ['Authorization']
   end
 end
 
@@ -118,4 +129,5 @@ map('/api/appointments') { run Appointments::AppointmentsController }
 map('/api/schedulings') { run Schedulings::SchedulingsController }
 map('/api/professionals') { run Professionals::ProfessionalsController }
 map('/api/rooms') { run Rooms::RoomsController }
+map('/api/expenses') { run Expenses::ExpensesController }
 map('/') { run App }
