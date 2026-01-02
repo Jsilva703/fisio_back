@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Company
   include Mongoid::Document
   include Mongoid::Timestamps
@@ -12,7 +14,7 @@ class Company
   field :status, type: String, default: 'active' # active, inactive, suspended
   field :max_users, type: Integer, default: 5
   field :settings, type: Hash, default: {}
-  
+
   # Campos de faturamento
   field :billing_day, type: Integer, default: 1 # Dia do mês para fechamento (1-31)
   field :billing_due_date, type: String # Próxima data de vencimento (formato: YYYY-MM-DD)
@@ -35,10 +37,10 @@ class Company
   validates :name, presence: true
   validates :slug, presence: true, uniqueness: true
   validates :email, presence: true, format: { with: URI::MailTo::EMAIL_REGEXP }
-  validates :plan, inclusion: { in: ['basic', 'professional', 'premium', 'enterprise'] }
-  validates :status, inclusion: { in: ['active', 'inactive', 'suspended'] }
+  validates :plan, inclusion: { in: %w[basic professional premium enterprise] }
+  validates :status, inclusion: { in: %w[active inactive suspended] }
   validates :billing_day, inclusion: { in: 1..31 }, allow_nil: true
-  validates :payment_status, inclusion: { in: ['paid', 'pending', 'overdue'] }
+  validates :payment_status, inclusion: { in: %w[paid pending overdue] }
 
   # Callbacks
   before_validation :generate_slug, on: :create
@@ -63,21 +65,21 @@ class Company
   def schedulings_count
     schedulings.count
   end
-  
+
   # Verifica se o pagamento está em dia
   def payment_ok?
     payment_status == 'paid'
   end
-  
+
   # Verifica se o pagamento está atrasado
   def payment_overdue?
     payment_status == 'overdue'
   end
-  
+
   # Calcula a próxima data de vencimento com base no billing_day
   def calculate_next_due_date
     return nil unless billing_day
-    
+
     today = Date.today
     # Se o dia já passou neste mês, pega o próximo mês
     if today.day >= billing_day
@@ -93,13 +95,13 @@ class Company
       "#{today.year}-#{today.month.to_s.rjust(2, '0')}-#{day.to_s.rjust(2, '0')}"
     end
   end
-  
+
   # Atualiza a data de vencimento
   def update_due_date!
     self.billing_due_date = calculate_next_due_date
     save
   end
-  
+
   # Marca pagamento como realizado
   def mark_as_paid!
     self.payment_status = 'paid'
@@ -108,7 +110,7 @@ class Company
     update_due_date!
     save
   end
-  
+
   # Marca pagamento como atrasado e suspende
   def mark_as_overdue!
     self.payment_status = 'overdue'
@@ -120,10 +122,11 @@ class Company
 
   def generate_slug
     return if slug.present?
+
     base_slug = name.parameterize
     self.slug = base_slug
     counter = 1
-    while Company.where(slug: self.slug).exists?
+    while Company.where(slug: slug).exists?
       self.slug = "#{base_slug}-#{counter}"
       counter += 1
     end

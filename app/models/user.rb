@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'bcrypt'
 
 class User
@@ -25,8 +27,8 @@ class User
   validates :email, presence: true, uniqueness: true
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }
   validates :password_digest, presence: true
-  validates :role, inclusion: { in: ['user', 'admin', 'machine'], message: "%{value} não é um role válido" }
-  validates :status, inclusion: { in: ['active', 'inactive'] }
+  validates :role, inclusion: { in: %w[user admin machine], message: '%<value>s não é um role válido' }
+  validates :status, inclusion: { in: %w[active inactive] }
   validates :company_id, presence: true, unless: -> { role == 'machine' }
 
   # Método para definir a senha (criptografa automaticamente)
