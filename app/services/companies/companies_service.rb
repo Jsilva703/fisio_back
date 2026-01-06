@@ -28,6 +28,7 @@ module Companies
         cnpj: params_data['cnpj'],
         address: params_data['address'],
         plan: params_data['plan'] || 'basic',
+        status: params_data['status'] || 'active',
         max_users: params_data['max_users'] || 5,
         settings: params_data['settings'] || {}
       )
@@ -48,12 +49,12 @@ module Companies
       update_data = params_data.select { |k, _| allowed_fields.include?(k) }
       raise ArgumentError, 'Nenhum campo válido para atualizar' if update_data.empty?
 
-      if update_data['plan'] && !%w[basic professional premium enterprise].include?(update_data['plan'])
+      if update_data['plan'] && !%w[free basic standard professional premium enterprise].include?(update_data['plan'])
         raise ArgumentError, 'Plano inválido. Opções: basic, professional, premium, enterprise'
       end
 
-      if update_data['status'] && !%w[active inactive suspended].include?(update_data['status'])
-        raise ArgumentError, 'Status inválido. Opções: active, inactive, suspended'
+      if update_data['status'] && !%w[active inactive suspended pending].include?(update_data['status'])
+        raise ArgumentError, 'Status inválido. Opções: active, inactive, suspended, pending'
       end
 
       if update_data['max_users'] && update_data['max_users'].to_i < 1

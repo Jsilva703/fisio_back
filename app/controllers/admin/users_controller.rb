@@ -8,7 +8,8 @@ module Admin
 
     before do
       content_type :json
-      Time.zone = 'America/Sao_Paulo' unless Time.zone
+      require 'active_support/time'
+      Time.zone ||= ActiveSupport::TimeZone['America/Sao_Paulo']
     end
 
     helpers do

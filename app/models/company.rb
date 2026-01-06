@@ -12,6 +12,8 @@ class Company
   field :address, type: String
   field :plan, type: String, default: 'basic' # basic, premium, enterprise
   field :status, type: String, default: 'active' # active, inactive, suspended
+  field :trial_ends_at, type: Date
+  field :on_trial, type: Mongoid::Boolean, default: false
   field :max_users, type: Integer, default: 5
   field :settings, type: Hash, default: {}
 
@@ -37,13 +39,14 @@ class Company
   validates :name, presence: true
   validates :slug, presence: true, uniqueness: true
   validates :email, presence: true, format: { with: URI::MailTo::EMAIL_REGEXP }
-  validates :plan, inclusion: { in: %w[basic professional premium enterprise] }
-  validates :status, inclusion: { in: %w[active inactive suspended] }
+  validates :plan, inclusion: { in: %w[free basic standard premium enterprise professional] }
+  validates :status, inclusion: { in: %w[active inactive suspended pending] }
   validates :billing_day, inclusion: { in: 1..31 }, allow_nil: true
-  validates :payment_status, inclusion: { in: %w[paid pending overdue] }
+  validates :payment_status, inclusion: { in: %w[paid pending overdue trial] }
 
   # Callbacks
   before_validation :generate_slug, on: :create
+  before_create :start_trial_if_needed
 
   # Métodos
   def active?
@@ -68,7 +71,17 @@ class Company
 
   # Verifica se o pagamento está em dia
   def payment_ok?
+    return true if on_trial && trial_ends_at && Date.today <= trial_ends_at
     payment_status == 'paid'
+  end
+
+  def trial_active?
+    on_trial && trial_ends_at && Date.today <= trial_ends_at
+  end
+
+  def trial_days_left
+    return 0 unless trial_active?
+    (trial_ends_at - Date.today).to_i
   end
 
   # Verifica se o pagamento está atrasado
@@ -130,5 +143,14 @@ class Company
       self.slug = "#{base_slug}-#{counter}"
       counter += 1
     end
+  end
+
+  def start_trial_if_needed
+    # New companies get 7 days free trial unless plan is 'free' or company is pending
+    return if plan == 'free' || status == 'pending'
+
+    self.on_trial = true
+    self.trial_ends_at = Date.today + 7
+    self.payment_status = 'trial'
   end
 end

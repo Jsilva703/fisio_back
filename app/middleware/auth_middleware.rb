@@ -20,6 +20,7 @@ class AuthMiddleware
       '/health',
       '/api/public/booking', # Agendamento online público (deve vir ANTES de /api/auth)
       '/api/public',
+      '/api/machine/companies/stream', # SSE público para novas empresas
       '/api/auth/login',
       '/api/auth/register',
       '/api/auth' # Permite todas as rotas de auth
@@ -61,16 +62,59 @@ class AuthMiddleware
         require_relative '../models/company'
         company = Company.find(decoded[0]['company_id'])
 
-        if company&.payment_overdue?
-          return [
-            403,
-            { 'content-type' => 'application/json' },
-            [{
-              error: 'Pagamento em atraso. Acesso suspenso.',
-              payment_status: company.payment_status,
-              billing_due_date: company.billing_due_date
-            }.to_json]
-          ]
+        # If company is on trial and trial active, allow access
+        if company
+          if company.status == 'pending'
+            return [
+              403,
+              { 'content-type' => 'application/json' },
+              [{ error: 'Empresa pendente. Acesso restrito até ativação.' }.to_json]
+            ]
+          end
+
+          if company.payment_overdue?
+            return [
+              403,
+              { 'content-type' => 'application/json' },
+              [{
+                error: 'Pagamento em atraso. Acesso suspenso.',
+                payment_status: company.payment_status,
+                billing_due_date: company.billing_due_date
+              }.to_json]
+            ]
+          end
+
+          # Plan-based access control: define minimal plan required per route
+          route_min_plan = {
+            '/api/medical_records' => 'standard',
+            '/api/professionals' => 'basic',
+            '/api/rooms' => 'basic',
+            '/api/appointments' => 'basic',
+            '/api/schedulings' => 'basic'
+          }
+
+          # Load ordered plans from config to compare rank
+          begin
+            require 'yaml'
+            plans_cfg = YAML.load_file(File.join(File.dirname(__FILE__), '..', '..', 'config', 'plans.yml'))['plans'] rescue nil
+            plan_order = plans_cfg ? plans_cfg.keys : %w[free basic standard premium enterprise professional]
+          rescue StandardError
+            plan_order = %w[free basic standard premium enterprise professional]
+          end
+
+          route_min_plan.each do |route, min_plan|
+            if request_path.start_with?(route)
+              company_plan_index = plan_order.index(company.plan) || 0
+              min_plan_index = plan_order.index(min_plan) || 0
+              if company_plan_index < min_plan_index && !(company.on_trial && company.trial_ends_at && Date.today <= company.trial_ends_at)
+                return [
+                  403,
+                  { 'content-type' => 'application/json' },
+                  [{ error: 'Plano insuficiente para acessar este recurso', required_plan: min_plan, current_plan: company.plan }.to_json]
+                ]
+              end
+            end
+          end
         end
       end
 

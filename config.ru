@@ -8,7 +8,9 @@ Dotenv.load
 
 Bundler.require
 
-Time.zone = 'America/Sao_Paulo'
+require 'active_support/time'
+# Ensure Time.zone is a TimeZone object
+Time.zone = ActiveSupport::TimeZone['America/Sao_Paulo']
 
 # 1. Carregar Configuração do Banco
 Mongoid.load!(File.join(File.dirname(__FILE__), 'config', 'mongoid.yml'))
@@ -49,6 +51,8 @@ require_relative './app/models/medical_record'
 require_relative './app/controllers/auth/auth_controller'
 require_relative './app/controllers/machine/machine_controller'
 require_relative './app/controllers/companies/companies_controller'
+require_relative './app/controllers/machine/companies_stream_controller'
+require_relative './app/controllers/machine/company_requests_controller'
 require_relative './app/controllers/billing/billing_controller'
 require_relative './app/controllers/billing/checkout_controller'
 require_relative './app/controllers/patients/patients_controller'
@@ -60,6 +64,7 @@ require_relative './app/controllers/users/users_controller'
 require_relative './app/middleware/auth_middleware'
 require_relative './app/controllers/admin/users_controller'
 require_relative './app/controllers/public/signup_company_controller'
+require_relative './app/controllers/public/company_requests_controller'
 # expenses files
 require_relative './app/models/expense'
 require_relative './app/controllers/expenses/expenses_controller'
@@ -125,6 +130,8 @@ use AuthMiddleware
 
 map('/api/auth') { run Auth::AuthController }
 map('/api/machine') { run Machine::MachineController }
+map('/api/machine/companies') { run Machine::CompaniesStreamController }
+map('/api/machine/company_requests') { run Machine::CompanyRequestsController }
 map('/api/companies') { run Companies::CompaniesController }
 map('/api/billing') { run Billing::BillingController }
 map('/api/billing/checkout') { run Billing::CheckoutController }
@@ -139,4 +146,5 @@ map('/api/rooms') { run Rooms::RoomsController }
 map('/api/expenses') { run Expenses::ExpensesController }
 map('/api/admin/users') { run Admin::UsersController }
 map('/api/public/signup_company') { run Public::SignupCompanyController }
+map('/api/public/company_requests') { run Public::CompanyRequestsController }
 map('/') { run App }
