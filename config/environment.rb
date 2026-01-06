@@ -8,7 +8,9 @@ Dotenv.load
 
 Bundler.require
 
-Time.zone = 'America/Sao_Paulo'
+require 'active_support/time'
+# Ensure Time.zone is a TimeZone object for scripts/jobs
+Time.zone ||= ActiveSupport::TimeZone['America/Sao_Paulo']
 
 # Carregar Configuração do Banco
 Mongoid.load!(File.join(File.dirname(__FILE__), 'mongoid.yml'))
