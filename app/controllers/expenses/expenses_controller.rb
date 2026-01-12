@@ -32,5 +32,14 @@ module Expenses
       total = serialized.reduce(0.0) { |s, e| s + (e[:amount] || 0.0) }
       { status: 'success', data: serialized, meta: { count: serialized.size, total_amount: total } }.to_json
     end
-  end
+
+    # --- DELETAR DESPESA ---
+    delete '/:id' do
+      result = Expenses::DeleteService.call(params[:id], env)
+      status result[:status]
+      result[:body].to_json
+    rescue StandardError => e
+      status 500
+      { error: 'Erro ao deletar', mensagem: e.message }.to_json
+    end
 end
