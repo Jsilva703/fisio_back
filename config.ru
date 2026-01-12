@@ -134,6 +134,8 @@ end
 
 use JsonParserMiddleware
 use AuthMiddleware
+# Avatars routes (precisa ficar antes do map)
+use Avatars::AvatarsController
 
 map('/api/auth') { run Auth::AuthController }
 map('/api/machine') { run Machine::MachineController }
@@ -155,6 +157,3 @@ map('/api/admin/users') { run Admin::UsersController }
 map('/api/public/signup_company') { run Public::SignupCompanyController }
 map('/api/public/company_requests') { run Public::CompanyRequestsController }
 map('/') { run App }
-
-# Avatars routes (precisa ficar por último para pegar as rotas /api/users e /api/professionals)
-use Avatars::AvatarsController
