@@ -14,6 +14,7 @@ class User
   field :phone, type: String
   field :status, type: String, default: 'active' # active, inactive
   field :company_id, type: BSON::ObjectId
+  field :avatar_url, type: String
 
   # Relacionamentos
   belongs_to :company, optional: true

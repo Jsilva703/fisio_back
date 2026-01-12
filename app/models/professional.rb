@@ -16,6 +16,7 @@ class Professional
   field :specialty, type: String # Fisioterapeuta, Médico, Psicólogo, etc
   field :color, type: String, default: '#3B82F6' # Para visualização na agenda
   field :status, type: String, default: 'active' # active, inactive
+  field :avatar_url, type: String
 
   # Relacionamentos
   belongs_to :company

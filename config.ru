@@ -68,6 +68,8 @@ require_relative './app/controllers/public/company_requests_controller'
 # expenses files
 require_relative './app/models/expense'
 require_relative './app/controllers/expenses/expenses_controller'
+# avatars controller
+require_relative './app/controllers/avatars/avatars_controller'
 # require_relative './app/controllers/health_controller'
 
 # Load service objects
@@ -147,4 +149,6 @@ map('/api/expenses') { run Expenses::ExpensesController }
 map('/api/admin/users') { run Admin::UsersController }
 map('/api/public/signup_company') { run Public::SignupCompanyController }
 map('/api/public/company_requests') { run Public::CompanyRequestsController }
+# Avatars routes (mapeadas diretamente para os endpoints)
+use Avatars::AvatarsController
 map('/') { run App }

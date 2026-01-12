@@ -6,6 +6,7 @@ ruby '3.2.3'
 
 gem 'bcrypt', '~> 3.1'
 gem 'dotenv'
+gem 'httparty', '~> 0.21'
 gem 'json'
 gem 'jwt', '~> 2.7'
 gem 'mongoid', '~> 9.0'
