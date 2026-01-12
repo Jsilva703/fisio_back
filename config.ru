@@ -15,6 +15,11 @@ Time.zone = ActiveSupport::TimeZone['America/Sao_Paulo']
 # 1. Carregar Configuração do Banco
 Mongoid.load!(File.join(File.dirname(__FILE__), 'config', 'mongoid.yml'))
 
+# 1.1. Carregar Initializers (antes dos services)
+Dir[File.join(File.dirname(__FILE__), 'config', 'initializers', '*.rb')].sort.each do |f|
+  require File.expand_path(f)
+end
+
 # 2. Middleware para parsear JSON
 class JsonParserMiddleware
   def initialize(app)
