@@ -42,4 +42,5 @@ module Expenses
       status 500
       { error: 'Erro ao deletar', mensagem: e.message }.to_json
     end
+  end
 end
