@@ -5,15 +5,20 @@ require_relative '../../services/supabase_storage_service'
 
 module Avatars
   class AvatarsController < Sinatra::Base
-    use AuthMiddleware
-
     # Upload avatar do usuário
     # POST /api/users/:id/avatar
     post '/api/users/:id/avatar' do
       content_type :json
 
       user_id = params[:id]
-      current_user = env['current_user']
+      
+      # Verificar autenticação
+      current_user_id = env['current_user_id']
+      unless current_user_id
+        halt 401, { error: 'Não autenticado' }.to_json
+      end
+
+      current_user = User.find(current_user_id)
 
       # Apenas o próprio usuário ou admin pode atualizar
       unless current_user.id.to_s == user_id || current_user.admin?
@@ -61,7 +66,14 @@ module Avatars
       content_type :json
 
       user_id = params[:id]
-      current_user = env['current_user']
+      
+      # Verificar autenticação
+      current_user_id = env['current_user_id']
+      unless current_user_id
+        halt 401, { error: 'Não autenticado' }.to_json
+      end
+
+      current_user = User.find(current_user_id)
 
       # Apenas o próprio usuário ou admin pode remover
       unless current_user.id.to_s == user_id || current_user.admin?
@@ -96,8 +108,14 @@ module Avatars
       content_type :json
 
       professional_id = params[:id]
-      current_user = env['current_user']
+      
+      # Verificar autenticação
+      current_user_id = env['current_user_id']
+      unless current_user_id
+        halt 401, { error: 'Não autenticado' }.to_json
+      end
 
+      current_user = User.find(current_user_id)
       professional = Professional.find(professional_id)
 
       # Verificar permissão (mesma empresa ou admin)
@@ -144,8 +162,14 @@ module Avatars
       content_type :json
 
       professional_id = params[:id]
-      current_user = env['current_user']
+      
+      # Verificar autenticação
+      current_user_id = env['current_user_id']
+      unless current_user_id
+        halt 401, { error: 'Não autenticado' }.to_json
+      end
 
+      current_user = User.find(current_user_id)
       professional = Professional.find(professional_id)
 
       # Verificar permissão (mesma empresa ou admin)
