@@ -20,9 +20,10 @@ module Avatars
 
       current_user = User.find(current_user_id)
 
-      # Apenas o próprio usuário ou admin pode atualizar
+      # Qualquer usuário pode atualizar sua própria foto
+      # Admin pode atualizar de qualquer um
       unless current_user.id.to_s == user_id || current_user.admin?
-        halt 403, { error: 'Sem permissão para atualizar este avatar' }.to_json
+        halt 403, { error: 'Você só pode atualizar seu próprio avatar' }.to_json
       end
 
       user = User.find(user_id)
@@ -75,9 +76,10 @@ module Avatars
 
       current_user = User.find(current_user_id)
 
-      # Apenas o próprio usuário ou admin pode remover
+      # Qualquer usuário pode remover sua própria foto
+      # Admin pode remover de qualquer um
       unless current_user.id.to_s == user_id || current_user.admin?
-        halt 403, { error: 'Sem permissão para remover este avatar' }.to_json
+        halt 403, { error: 'Você só pode remover seu próprio avatar' }.to_json
       end
 
       user = User.find(user_id)

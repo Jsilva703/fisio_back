@@ -57,6 +57,7 @@ module Users
           role: user.role,
           status: user.status,
           phone: user.phone,
+          avatar_url: user.avatar_url,
           company_id: user.company_id&.to_s,
           created_at: user.created_at,
           updated_at: user.updated_at
