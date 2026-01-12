@@ -154,6 +154,7 @@ map('/api/expenses') { run Expenses::ExpensesController }
 map('/api/admin/users') { run Admin::UsersController }
 map('/api/public/signup_company') { run Public::SignupCompanyController }
 map('/api/public/company_requests') { run Public::CompanyRequestsController }
-# Avatars routes (mapeadas diretamente para os endpoints)
-use Avatars::AvatarsController
 map('/') { run App }
+
+# Avatars routes (precisa ficar por último para pegar as rotas /api/users e /api/professionals)
+use Avatars::AvatarsController
