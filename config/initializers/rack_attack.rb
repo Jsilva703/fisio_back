@@ -2,7 +2,6 @@
 
 require 'rack/attack'
 require 'active_support/cache'
-require 'active_support/cache/redis_cache_store'
 
 class Rack::Attack
   # Allow local traffic (loopback)
@@ -12,11 +11,7 @@ class Rack::Attack
 
   # Ensure a cache store is configured for Rack::Attack to avoid MissingStoreError
   begin
-    Rack::Attack.cache.store ||= if ENV['REDIS_URL'].to_s.empty?
-                                   ActiveSupport::Cache::MemoryStore.new
-                                 else
-                                   ActiveSupport::Cache::RedisCacheStore.new(url: ENV['REDIS_URL'])
-                                 end
+    Rack::Attack.cache.store ||= ActiveSupport::Cache::MemoryStore.new
   rescue => e
     warn "Rack::Attack cache setup failed: #{e.message}"
   end
