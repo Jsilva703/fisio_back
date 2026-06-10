@@ -3,7 +3,13 @@
 require 'jwt'
 
 class AuthMiddleware
-  JWT_SECRET = ENV['JWT_SECRET'] || 'sua_chave_secreta_aqui_troque_em_producao'
+  CLINIC_ROUTES = [
+    '/api/appointments',
+    '/api/schedulings',
+    '/api/patients',
+    '/api/medical-records',
+    '/api/medical_records'
+  ].freeze
 
   def initialize(app)
     @app = app
@@ -22,12 +28,13 @@ class AuthMiddleware
       '/api/public',
       '/api/machine/companies/stream', # SSE público para novas empresas
       '/api/auth/login',
-      '/api/auth/register',
-      '/api/auth' # Permite todas as rotas de auth
+      '/api/auth/register'
     ]
 
     # Se a rota é pública, deixa passar
-    return @app.call(env) if public_paths.any? { |path| request_path.start_with?(path) }
+    return @app.call(env) if public_paths.include?(request_path)
+    return @app.call(env) if request_path.start_with?('/api/public')
+    return @app.call(env) if request_path.start_with?('/api/machine/companies/stream')
 
     # Para rotas protegidas, valida o token
     auth_header = env['HTTP_AUTHORIZATION']
@@ -36,7 +43,7 @@ class AuthMiddleware
 
     begin
       token = auth_header.split(' ').last
-      decoded = JWT.decode(token, JWT_SECRET, true, { algorithm: 'HS256' })
+      decoded = JWT.decode(token, jwt_secret, true, { algorithm: 'HS256' })
 
       # Adiciona os dados do usuário ao env para uso nos controllers
       env['current_user_id'] = decoded[0]['user_id']
@@ -45,10 +52,9 @@ class AuthMiddleware
       env['current_company_id'] = decoded[0]['company_id'] # IMPORTANTE: company_id do token
 
       # Bloquear role 'machine' de acessar rotas da clínica
-      clinic_routes = ['/api/appointments', '/api/schedulings']
       user_role = decoded[0]['role']
 
-      if user_role == 'machine' && clinic_routes.any? { |route| request_path.start_with?(route) }
+      if user_role == 'machine' && CLINIC_ROUTES.any? { |route| request_path.start_with?(route) }
         return forbidden_response('Acesso negado. Usuários do tipo machine não podem acessar dados da clínica.')
       end
 
@@ -129,6 +135,13 @@ class AuthMiddleware
   end
 
   private
+
+  def jwt_secret
+    secret = ENV['JWT_SECRET'].to_s
+    raise 'JWT_SECRET nao configurado' if secret.empty?
+
+    secret
+  end
 
   def unauthorized_response(message)
     [

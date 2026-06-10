@@ -13,7 +13,6 @@ module Auth
     end
 
     # Chave secreta para JWT (coloque no .env em produção)
-    JWT_SECRET = ENV['JWT_SECRET']
 
     # --- REGISTRO DE USUÁRIO ---
     post '/register' do
@@ -31,7 +30,13 @@ module Auth
       end
 
       # Verificar company_id (obrigatório para users/admins, opcional para machine)
-      role = params_data['role'] || 'user'
+      requested_role = params_data['role'] || 'user'
+      unless requested_role == 'user'
+        status 403
+        return { error: 'Registro publico permite apenas role user' }.to_json
+      end
+
+      role = 'user'
       if role != 'machine' && !params_data['company_id']
         status 400
         return { error: 'company_id é obrigatório para usuários que não são machine' }.to_json
@@ -138,7 +143,7 @@ module Auth
       token = auth_header.split(' ').last
 
       # Decodifica o token
-      decoded = JWT.decode(token, JWT_SECRET, true, { algorithm: 'HS256' })
+      decoded = JWT.decode(token, jwt_secret, true, { algorithm: 'HS256' })
       user_id = decoded[0]['user_id']
 
       # Busca o usuário
@@ -168,7 +173,14 @@ module Auth
         company_id: user.company_id&.to_s,
         exp: Time.now.to_i + (24 * 3600) # Expira em 24 horas
       }
-      JWT.encode(payload, JWT_SECRET, 'HS256')
+      JWT.encode(payload, jwt_secret, 'HS256')
+    end
+
+    def jwt_secret
+      secret = ENV['JWT_SECRET'].to_s
+      raise 'JWT_SECRET nao configurado' if secret.empty?
+
+      secret
     end
   end
 end

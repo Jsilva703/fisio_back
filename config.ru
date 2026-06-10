@@ -109,13 +109,22 @@ class App < Sinatra::Base
   end
 end
 
-# Configurable CORS: set APP_FRONT_URL to the frontend origin (or leave blank to allow any)
-front_origin = ENV['APP_FRONT_URL'] || '*'
+# Configurable CORS: set APP_FRONT_URL to one or more comma-separated frontend origins.
+front_origins = ENV['APP_FRONT_URL'].to_s.split(',').map(&:strip).reject(&:empty?)
+if front_origins.empty?
+  raise 'APP_FRONT_URL must be configured in production' if ENV['RACK_ENV'] == 'production'
+
+  front_origins = ['*']
+end
+
 allow_credentials = ENV['CORS_ALLOW_CREDENTIALS'] == 'true'
+if allow_credentials && front_origins.include?('*')
+  raise 'CORS_ALLOW_CREDENTIALS cannot be true when APP_FRONT_URL is wildcard'
+end
 
 use Rack::Cors do
   allow do
-    origins front_origin
+    origins(*front_origins)
     resource '*',
              headers: :any,
              methods: %i[get post put patch delete options],

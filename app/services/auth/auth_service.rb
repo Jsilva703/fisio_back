@@ -5,7 +5,6 @@ require 'jwt'
 
 module Auth
   class AuthService
-    JWT_SECRET = ENV['JWT_SECRET']
 
     def self.register(params)
       if params.nil? || !params['email'] || !params['password']
@@ -15,7 +14,12 @@ module Auth
 
       return { status: 409, body: { error: 'Email já cadastrado' } } if User.where(email: params['email']).exists?
 
-      role = params['role'] || 'user'
+      requested_role = params['role'] || 'user'
+      unless requested_role == 'user'
+        return { status: 403, body: { error: 'Registro publico permite apenas role user' } }
+      end
+
+      role = 'user'
       if role != 'machine' && !params['company_id']
         return { status: 400, body: { error: 'company_id é obrigatório para usuários que não são machine' } }
       end
@@ -74,7 +78,7 @@ module Auth
     def self.me(token)
       return { status: 401, body: { error: 'Token não fornecido' } } if token.nil?
 
-      decoded = JWT.decode(token, JWT_SECRET, true, { algorithm: 'HS256' })
+      decoded = JWT.decode(token, jwt_secret, true, { algorithm: 'HS256' })
       user_id = decoded[0]['user_id']
       user = User.find(user_id)
       { status: 200, body: { status: 'success', user: user } }
@@ -94,7 +98,14 @@ module Auth
         company_id: user.company_id&.to_s,
         exp: Time.now.to_i + (24 * 3600)
       }
-      JWT.encode(payload, JWT_SECRET, 'HS256')
+      JWT.encode(payload, jwt_secret, 'HS256')
+    end
+
+    def self.jwt_secret
+      secret = ENV['JWT_SECRET'].to_s
+      raise 'JWT_SECRET nao configurado' if secret.empty?
+
+      secret
     end
   end
 end

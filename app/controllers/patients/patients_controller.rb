@@ -14,7 +14,7 @@ module Patients
       halt 401, { error: 'Não autenticado' }.to_json unless env['current_user_id']
 
       # Machine pode acessar todas empresas, outros só sua empresa
-      @current_company_id = env['current_user_role'] == 'machine' ? nil : env['current_company_id']
+      @current_company_id = env['current_company_id']
     end
 
     # --- LISTAR PACIENTES ---

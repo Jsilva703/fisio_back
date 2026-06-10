@@ -2,7 +2,7 @@
 
 require 'sinatra/base'
 require 'json'
-require 'jwt'
+require 'securerandom'
 require_relative '../../models/company'
 require_relative '../../models/user'
 
@@ -43,7 +43,7 @@ module Public
           'cnpj' => company_data['cnpj'],
           'address' => company_data['address'],
           'plan' => company_data['plan'] || 'basic',
-          'status' => company_data['status'] || 'pending',
+          'status' => 'pending',
           'max_users' => company_data['max_users']
         }
 
@@ -88,22 +88,11 @@ module Public
           end
         end
 
-        # Generate JWT token
-        jwt_secret = ENV['JWT_SECRET'] || 'sua_chave_secreta_aqui_troque_em_producao'
-        payload = {
-          user_id: user.id.to_s,
-          email: user.email,
-          role: user.role,
-          company_id: company.id.to_s,
-          exp: Time.now.to_i + (24 * 3600)
-        }
-        token = JWT.encode(payload, jwt_secret, 'HS256')
-
         resp = {
           status: 'success',
+          activation_required: true,
           company_id: company.id.to_s,
           user_id: user.id.to_s,
-          token: token,
           company: company
         }
 

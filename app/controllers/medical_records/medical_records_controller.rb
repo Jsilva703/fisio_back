@@ -13,7 +13,7 @@ module MedicalRecords
       # Verificar autenticação
       halt 401, { error: 'Não autenticado' }.to_json unless env['current_user_id']
 
-      @current_company_id = env['current_user_role'] == 'machine' ? nil : env['current_company_id']
+      @current_company_id = env['current_company_id']
       @current_user_id = env['current_user_id']
     end
 
@@ -60,7 +60,7 @@ module MedicalRecords
         return { error: 'patient_id é obrigatório' }.to_json
       end
 
-      record = MedicalRecords::MedicalRecordsService.create(@current_user_id, params_data)
+      record = MedicalRecords::MedicalRecordsService.create(@current_user_id, @current_company_id, params_data)
 
       status 201
       { status: 'success', message: 'Prontuário criado com sucesso',

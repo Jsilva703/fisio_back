@@ -4,10 +4,11 @@
 module MedicalRecords
   class MedicalRecordsService
     def self.list_by_patient(company_id, patient_id)
+      raise ArgumentError, 'company_id required' unless company_id
       raise ArgumentError, 'patient_id required' unless patient_id
 
       patient = Patient.find(patient_id)
-      if company_id && patient.company_id.to_s != company_id.to_s
+      if patient.company_id.to_s != company_id.to_s
         raise Mongoid::Errors::DocumentNotFound.new(Patient, patient_id)
       end
 
@@ -16,18 +17,24 @@ module MedicalRecords
     end
 
     def self.find(company_id, id)
+      raise ArgumentError, 'company_id required' unless company_id
+
       record = MedicalRecord.find(id)
-      if company_id && record.company_id.to_s != company_id.to_s
+      if record.company_id.to_s != company_id.to_s
         raise Mongoid::Errors::DocumentNotFound.new(MedicalRecord, id)
       end
 
       record
     end
 
-    def self.create(current_user_id, params_data)
+    def self.create(current_user_id, company_id, params_data)
+      raise ArgumentError, 'company_id required' unless company_id
       raise ArgumentError, 'patient_id is required' if params_data['patient_id'].to_s.strip.empty?
 
       patient = Patient.find(params_data['patient_id'])
+      if patient.company_id.to_s != company_id.to_s
+        raise Mongoid::Errors::DocumentNotFound.new(Patient, params_data['patient_id'])
+      end
 
       record = MedicalRecord.new(
         patient_id: patient.id,
@@ -79,8 +86,8 @@ module MedicalRecords
     def self.delete(current_user_role, current_user_id, company_id, id)
       record = find(company_id, id)
 
-      unless current_user_role == 'machine' || record.created_by_id.to_s == current_user_id
-        raise StandardError, 'Apenas o criador do prontuário ou machine pode deletá-lo'
+      unless current_user_role != 'machine' && record.created_by_id.to_s == current_user_id
+        raise StandardError, 'Apenas o criador do prontuario pode deleta-lo'
       end
 
       record.delete
@@ -88,6 +95,8 @@ module MedicalRecords
     end
 
     def self.list(company_id, params = {})
+      raise ArgumentError, 'company_id required' unless company_id
+
       page = (params[:page] || 1).to_i
       per_page = (params[:per_page] || 20).to_i
 

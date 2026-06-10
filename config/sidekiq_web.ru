@@ -25,8 +25,13 @@ rescue LoadError
 end
 
 # Basic HTTP auth for the Sidekiq Web UI. Set SIDEKIQ_WEB_USER and SIDEKIQ_WEB_PASSWORD in env.
-web_user = ENV['SIDEKIQ_WEB_USER'] || 'admin'
-web_pass = ENV['SIDEKIQ_WEB_PASSWORD'] || 'password'
+web_user = ENV['SIDEKIQ_WEB_USER']
+web_pass = ENV['SIDEKIQ_WEB_PASSWORD']
+if ENV['RACK_ENV'] == 'production' && (web_user.to_s.empty? || web_pass.to_s.empty?)
+  raise 'SIDEKIQ_WEB_USER and SIDEKIQ_WEB_PASSWORD must be configured in production'
+end
+web_user = 'admin' if web_user.to_s.empty?
+web_pass = SecureRandom.hex(32) if web_pass.to_s.empty?
 use Rack::Auth::Basic, 'Sidekiq Web' do |u, p|
   ok_user = Digest::SHA256.hexdigest(u) == Digest::SHA256.hexdigest(web_user)
   ok_pass = Digest::SHA256.hexdigest(p) == Digest::SHA256.hexdigest(web_pass)
